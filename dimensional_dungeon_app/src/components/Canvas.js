@@ -7,16 +7,15 @@ const Canvas = (props) => {
     const canvas = canvasReference.current;
     const context = canvas.getContext("2d");
 
+    //console.log(mapImage);
+
     //set properties of the canvas component
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-
     context.fillStyle = "white";
     context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-
     const mapImage = new Image();
-    mapImage.src = "./images/dimensionalDungeonStartingIsland.png";
-    console.log(mapImage);
+    mapImage.src = "/images/dimensionalDungeonStartingIsland.png";
     mapImage.onload = () => {
       context.drawImage(mapImage, 0, 0);
     };
@@ -27,10 +26,13 @@ const Canvas = (props) => {
       canvas.height = window.innerHeight;
       context.fillStyle = "white";
       context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-      context.drawImage(mapImage, 0, 0);
+      mapImage.src = "/images/dimensionalDungeonStartingIsland.png";
+      mapImage.onload = () => {
+        context.drawImage(mapImage, 0, 0);
+      };
     });
   }, []);
 
-  return <canvas ref={canvasReference} />;
+  return <canvas ref={canvasReference} {...props} />;
 };
 export default Canvas;
