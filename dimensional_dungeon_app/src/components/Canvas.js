@@ -15,9 +15,9 @@ const Canvas = (props) => {
     context.fillStyle = "white";
     context.fillRect(0, 0, context.canvas.width, context.canvas.height);
     const mapImage = new Image();
-    mapImage.src = "/images/dimesionalDungeonStartingIslandSmaller.png";
+    mapImage.src = "/images/Pellet Town.png";
     mapImage.onload = () => {
-      context.drawImage(mapImage, 0, -400);
+      context.drawImage(mapImage, -785, -650);
     };
 
     //set all the properties again if the window is resized
@@ -26,10 +26,10 @@ const Canvas = (props) => {
       canvas.height = window.innerHeight;
       context.fillStyle = "white";
       context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-      mapImage.src = "/images/dimesionalDungeonStartingIslandSmaller.png";
-      mapImage.onload = () => {
-        context.drawImage(mapImage, 0, -400);
-      };
+      // mapImage.src = "/images/dimesionalDungeonStartingIslandSmaller.png";
+      // mapImage.onload = () => {
+      context.drawImage(mapImage, -785, -650);
+      //};
     });
   }, []);
 
