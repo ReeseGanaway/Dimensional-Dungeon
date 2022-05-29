@@ -1,15 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import Tile from "../classes/Tile";
 
-// class Tile {
-//   constructor(x, y) {
-//     this.x = x;
-//     this.y = y;
-//     this.width = 48;
-//     this.height = 48;
-//   }
-// }
-
 const Canvas = (props) => {
   const canvasReference = useRef(null);
 
