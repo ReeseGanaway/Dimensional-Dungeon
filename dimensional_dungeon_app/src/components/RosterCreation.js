@@ -20,6 +20,7 @@ const RosterCreation = () => {
   const handleClick1 = () => {
     let batman = {
       name: "batman",
+      displayName: "Batman (Prime Earth)",
       imgLink: "/images/batman/batmanDown2.png",
       x: 0,
       y: 0,

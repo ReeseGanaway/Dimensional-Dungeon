@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { rosterActions } from "../redux/slices/roster";
 import RosterCreation from "./RosterCreation";
 import { modeActions } from "../redux/slices/mode";
+import "./Canvas.css";
 
 const Canvas = (props) => {
   const roster = useSelector((state) => state.roster);
@@ -34,8 +35,6 @@ const Canvas = (props) => {
   };
 
   function handleClick(canvas, e) {
-    console.log("Beginning of handleclick, movement is:", mode.movement);
-
     //get the coordinates of the user's curson on click
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
@@ -64,8 +63,6 @@ const Canvas = (props) => {
           //put us in movement mode
           toggleMovement(newMovement);
 
-          console.log("Batman: ", mode.movement);
-
           break;
         }
       }
@@ -74,7 +71,6 @@ const Canvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
-    console.log(mode.movement.currentHero);
     let newTeam = playerTeam;
     updateXY({
       name: mode.movement.currentHero,
@@ -86,95 +82,12 @@ const Canvas = (props) => {
     setPlayerTeam(newTeam);
     let exitMovement = { active: false, currentHero: null };
     toggleMovement(exitMovement);
-    console.log(mode, roster["batman"]);
+    //console.log(mode, roster["batman"]);
   }
 
-  // function getCursorPosition(canvas, e) {
-  //   let rect = canvas.getBoundingClientRect();
-  //   let x = e.clientX - rect.left;
-  //   let y = e.clientY - rect.top;
-  //   console.log(movement);
-
-  //   if (movement["active"]) {
-  //     let newTeam = playerTeam;
-  //     newTeam[movement.character].x = x - (x % 48);
-  //     newTeam[movement.character].y = y - (y % 48);
-  //     setPlayerTeam(newTeam);
-  //     const updated = true;
-  //     setCharacterUpdate(updated);
-
-  //     let newMovement = { active: false, character: null };
-  //     setMovement(newMovement);
-
-  //     console.log(movement, playerTeam["batman"], characterUpdate);
-  //     return;
-  //   }
-
-  //   for (const [key, value] of Object.entries(playerTeam)) {
-  //     if (
-  //       x >= playerTeam[key].x &&
-  //       x <= playerTeam[key].x + 47 &&
-  //       y >= playerTeam[key].y &&
-  //       y <= playerTeam[key].y + 47
-  //     ) {
-  //       console.log("Batman!");
-  //       //playerTeam[key].move = true;
-
-  //       setMovement(() => {
-  //         movement.active = true;
-  //         movement.character = playerTeam[key].name;
-  //         return movement;
-  //       });
-  //       console.log(movement);
-  //       console.log(playerTeam["batman"]);
-
-  //       //setCharacterUpdate(true);
-  //       return;
-  //     }
-  //   }
-  //   console.log("Coordinate x: " + x, "Coordinate y: " + y);
-  // }
-
-  // useEffect(() => {
-  //   const newCanvas = document.createElement("canvas");
-
-  //   setCanvas(newCanvas);
-  //   //const context = canvas.getContext("2d");
-
-  //   console.log("here");
-
-  //   newCanvas.addEventListener("mousedown", function (e) {
-  //     handleClick.bind(this)(newCanvas, e);
-  //   });
-
-  //   //    when map loads, perform these actions
-  //   mapImage.onload = () => {
-  //     console.log("loaded");
-  //     newCanvas.width = mapImage.width;
-  //     newCanvas.height = mapImage.height;
-
-  //     const context = newCanvas.getContext("2d");
-  //     context.drawImage(mapImage, 0, 0);
-  //     setCanvas(newCanvas);
-  //     console.log(newCanvas);
-  //     document.body.appendChild(newCanvas);
-  //   };
-
-  //   //set all the properties again if the window is resized
-  //   // window.addEventListener("resize", () => {
-
-  //   //   mapImage.onload = () => {
-  //   //     context.drawImage(mapImage, 0, 0);
-  //   //     context.drawImage(playerSprite, canvas.width / 2, canvas.height / 2);
-  //   //   };
-  //   // });
-  // }, []);
-
   useEffect(() => {
+    const canvasDiv = document.getElementById("canvas-div");
     const oldCanvas = document.getElementById("newCanvas");
-    if (oldCanvas) {
-      oldCanvas.remove();
-    }
     const newCanvas = document.createElement("canvas");
     setCanvas(newCanvas);
 
@@ -191,8 +104,7 @@ const Canvas = (props) => {
       const context = newCanvas.getContext("2d");
       context.drawImage(mapImage, 0, 0);
       setCanvas(newCanvas);
-      console.log(newCanvas);
-      document.body.appendChild(newCanvas);
+      //console.log(newCanvas);
 
       for (const [key, value] of Object.entries(roster)) {
         let sprite = new Image();
@@ -201,9 +113,36 @@ const Canvas = (props) => {
           context.drawImage(sprite, roster[key].x, roster[key].y);
         };
       }
+      if (oldCanvas) {
+        oldCanvas.remove();
+      }
+      canvasDiv.appendChild(newCanvas);
     };
   }, [roster, mode]);
 
-  return;
+  return (
+    <div id="full-ui" className="full-ui row">
+      <div id="canvas-div" className="canvas-div col-md-auto"></div>
+      <div id="hero-info" className="hero-info col-md-auto">
+        <div className="row">
+          <h6>Round 1</h6>
+        </div>
+        <div className="row">
+          {mode.movement.currentHero ? (
+            <>
+              <div className="col">
+                {roster[mode.movement.currentHero].displayName}
+              </div>
+              <div className="col">
+                <img src={roster[mode.movement.currentHero].imgLink} />
+              </div>
+            </>
+          ) : (
+            "Select a hero"
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 export default Canvas;

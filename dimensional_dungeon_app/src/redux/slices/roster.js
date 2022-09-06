@@ -17,7 +17,6 @@ export const roster = createSlice({
     updateXY(state, action) {
       const name = action.payload.name;
       if (name != undefined) {
-        console.log("updating");
         return {
           ...state,
           [action.payload.name]: {
