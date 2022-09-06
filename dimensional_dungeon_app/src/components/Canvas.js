@@ -8,6 +8,8 @@ const Canvas = (props) => {
   const roster = useSelector((state) => state.roster);
   const mode = useSelector((state) => state.mode);
   const dispatch = useDispatch();
+  const [canvas, setCanvas] = useState(document.createElement("canvas"));
+  const canvasRef = useRef(null);
 
   const [characterUpdate, setCharacterUpdate] = useState(false);
   const [playerTeam, setPlayerTeam] = useState({});
@@ -56,7 +58,7 @@ const Canvas = (props) => {
         ) {
           const newMovement = {
             active: true,
-            character: roster[key].name,
+            currentHero: roster[key].name,
           };
 
           //put us in movement mode
@@ -72,7 +74,7 @@ const Canvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
-    console.log("here");
+    console.log(mode.movement.currentHero);
     let newTeam = playerTeam;
     updateXY({
       name: mode.movement.currentHero,
@@ -82,7 +84,7 @@ const Canvas = (props) => {
     // roster[movement.currentHero].x = x - (x % 48);
     // roster[movement.currentHero].y = y - (y % 48);
     setPlayerTeam(newTeam);
-    let exitMovement = { active: false, character: null };
+    let exitMovement = { active: false, currentHero: null };
     toggleMovement(exitMovement);
     console.log(mode, roster["batman"]);
   }
@@ -133,76 +135,75 @@ const Canvas = (props) => {
   //   console.log("Coordinate x: " + x, "Coordinate y: " + y);
   // }
 
-  const canvasReference = useRef(null);
+  // useEffect(() => {
+  //   const newCanvas = document.createElement("canvas");
+
+  //   setCanvas(newCanvas);
+  //   //const context = canvas.getContext("2d");
+
+  //   console.log("here");
+
+  //   newCanvas.addEventListener("mousedown", function (e) {
+  //     handleClick.bind(this)(newCanvas, e);
+  //   });
+
+  //   //    when map loads, perform these actions
+  //   mapImage.onload = () => {
+  //     console.log("loaded");
+  //     newCanvas.width = mapImage.width;
+  //     newCanvas.height = mapImage.height;
+
+  //     const context = newCanvas.getContext("2d");
+  //     context.drawImage(mapImage, 0, 0);
+  //     setCanvas(newCanvas);
+  //     console.log(newCanvas);
+  //     document.body.appendChild(newCanvas);
+  //   };
+
+  //   //set all the properties again if the window is resized
+  //   // window.addEventListener("resize", () => {
+
+  //   //   mapImage.onload = () => {
+  //   //     context.drawImage(mapImage, 0, 0);
+  //   //     context.drawImage(playerSprite, canvas.width / 2, canvas.height / 2);
+  //   //   };
+  //   // });
+  // }, []);
 
   useEffect(() => {
-    const canvas = canvasReference.current;
-    const context = canvas.getContext("2d");
+    const oldCanvas = document.getElementById("newCanvas");
+    if (oldCanvas) {
+      oldCanvas.remove();
+    }
+    const newCanvas = document.createElement("canvas");
+    setCanvas(newCanvas);
 
-    console.log("here");
-    const spriteImages = [];
-    // if (roster) {
-    //   for (const [key, value] of Object.entries(roster)) {
-    //     //const spriteObj = { ...roster[key] };
-    //     //const name = spriteObj.name;
-    //     //spriteObj.spriteImg = new Image();
-
-    //     //spriteObj.spriteImg.src = roster[key].imgLink;
-
-    //     // setPlayerTeam(() => {
-    //     //   playerTeam[name] = spriteObj;
-    //     //   return playerTeam;
-    //     // });
-
-    // }
-    //}
-
-    canvas.addEventListener("mousedown", function (e) {
-      handleClick.bind(this)(canvas, e);
+    newCanvas.addEventListener("mousedown", function (e) {
+      handleClick.bind(this)(newCanvas, e);
     });
-
-    //when map loads, perform these actions
-    // mapImage.onload = () => {
-    //   canvas.width = mapImage.width;
-    //   canvas.height = mapImage.height;
-
-    //   context.drawImage(mapImage, 0, 0);
-    // };
-
-    // //set all the properties again if the window is resized
-    // window.addEventListener("resize", () => {
-
-    //   mapImage.onload = () => {
-    //     context.drawImage(mapImage, 0, 0);
-    //     context.drawImage(playerSprite, canvas.width / 2, canvas.height / 2);
-    //   };
-    // });
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasReference.current;
-    const context = canvas.getContext("2d");
-    console.log(
-      "At beginning of useeffect, here is the movement",
-      mode.movement
-    );
+    //const context = canvas.getContext("2d");
 
     mapImage.onload = () => {
-      canvas.width = mapImage.width;
-      canvas.height = mapImage.height;
+      newCanvas.width = mapImage.width;
+      newCanvas.height = mapImage.height;
+      newCanvas.id = "newCanvas";
+
+      const context = newCanvas.getContext("2d");
       context.drawImage(mapImage, 0, 0);
+      setCanvas(newCanvas);
+      console.log(newCanvas);
+      document.body.appendChild(newCanvas);
 
       for (const [key, value] of Object.entries(roster)) {
-        console.log("here");
         let sprite = new Image();
         sprite.src = roster[key].imgLink;
-        context.drawImage(sprite, roster[key].x, roster[key].y);
+        sprite.onload = () => {
+          context.drawImage(sprite, roster[key].x, roster[key].y);
+        };
       }
     };
+  }, [roster, mode]);
 
-    console.log("At end of Useeffect, here is the movement:", mode.movement);
-  }, [playerTeam, roster, mode]);
-
-  return <canvas ref={canvasReference} />;
+  return;
 };
 export default Canvas;

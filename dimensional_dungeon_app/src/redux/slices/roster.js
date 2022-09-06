@@ -16,14 +16,17 @@ export const roster = createSlice({
     },
     updateXY(state, action) {
       const name = action.payload.name;
-      return {
-        ...state,
-        [action.payload.name]: {
-          ...state[name],
-          x: action.payload.x,
-          y: action.payload.y,
-        },
-      };
+      if (name != undefined) {
+        console.log("updating");
+        return {
+          ...state,
+          [action.payload.name]: {
+            ...state[name],
+            x: action.payload.x,
+            y: action.payload.y,
+          },
+        };
+      }
     },
     clearRoster(state, action) {
       return {};
