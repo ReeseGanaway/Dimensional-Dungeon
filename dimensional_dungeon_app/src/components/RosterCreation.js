@@ -21,7 +21,8 @@ const RosterCreation = () => {
     let batman = {
       name: "batman",
       displayName: "Batman (Prime Earth)",
-      imgLink: "/images/batman/batmanDown2.png",
+      displayIcon: "/images/batman/batmanDown2.png",
+      spriteSheet: "/images/batman/batmanSpriteSheet.png",
       x: 0,
       y: 0,
     };
@@ -29,24 +30,32 @@ const RosterCreation = () => {
   };
 
   const handleClick2 = () => {
-    let batman = {
-      name: "batman",
-      x: 4,
+    let robin = {
+      name: "robin",
+      displayName: "Robin (Dick Grayson)(Prime Earth)",
+      displayIcon: "/images/robin/robinDown2.png",
+      spriteSheet: "/images/robin/robinNightwingSpriteSheet.png",
+      x: 48,
+      y: 0,
     };
+    addHero(robin);
   };
 
   return (
     <Fragment>
-      <Link to="/game">
-        Game
-        <input
-          type="image"
-          onClick={handleClick1}
-          src="/images/batman/batmanDown2.png"
-        ></input>
-      </Link>
+      <Link to="/game">Game</Link>
 
-      <button onClick={handleClick2}>Update X</button>
+      <input
+        type="image"
+        onClick={handleClick1}
+        src="/images/batman/batmanDown2.png"
+      ></input>
+
+      <input
+        type="image"
+        onClick={handleClick2}
+        src="/images/robin/robinDown2.png"
+      ></input>
     </Fragment>
   );
 };

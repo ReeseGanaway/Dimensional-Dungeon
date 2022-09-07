@@ -108,9 +108,20 @@ const Canvas = (props) => {
 
       for (const [key, value] of Object.entries(roster)) {
         let sprite = new Image();
-        sprite.src = roster[key].imgLink;
+        sprite.src = roster[key].spriteSheet;
+        console.log(sprite);
         sprite.onload = () => {
-          context.drawImage(sprite, roster[key].x, roster[key].y);
+          context.drawImage(
+            sprite,
+            48,
+            0,
+            48,
+            48,
+            roster[key].x,
+            roster[key].y,
+            48,
+            48
+          );
         };
       }
       if (oldCanvas) {
@@ -134,7 +145,7 @@ const Canvas = (props) => {
                 {roster[mode.movement.currentHero].displayName}
               </div>
               <div className="col">
-                <img src={roster[mode.movement.currentHero].imgLink} />
+                <img src={roster[mode.movement.currentHero].spriteSheet} />
               </div>
             </>
           ) : (
