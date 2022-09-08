@@ -1,6 +1,6 @@
 import React, { Fragment } from "react";
 import "./App.css";
-import GrassCanvas from "./components/Canvas";
+import GrassCanvas from "./components/GrassCanvas";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import RosterCreation from "./components/RosterCreation";
 import Interface from "./components/Interface";

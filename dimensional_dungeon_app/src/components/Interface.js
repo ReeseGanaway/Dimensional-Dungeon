@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { rosterActions } from "../redux/slices/roster";
 import { modeActions } from "../redux/slices/mode";
 import RosterCreation from "./RosterCreation";
-import Canvas from "./Canvas";
+import Canvas from "./GrassCanvas";
 
 const Interface = () => {
   const mode = useSelector((state) => state.mode);
