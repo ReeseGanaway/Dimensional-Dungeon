@@ -39,6 +39,14 @@ const GrassCanvas = (props) => {
     dispatch(modeActions.toggleMovement(movement));
   };
 
+  const endMovement = (movement) => {
+    dispatch(modeActions.endMovement());
+  };
+
+  const resetMode = () => {
+    dispatch(modeActions.resetMode);
+  };
+
   function handleClick(canvas, e) {
     //get the coordinates of the user's curson on click
     let rect = canvas.getBoundingClientRect();
@@ -78,7 +86,6 @@ const GrassCanvas = (props) => {
   function moveCharacter(x, y) {
     //update component playerTeam state
     let newTeam = playerTeam;
-    console.log(mode.movement.currentHero, playerTeam);
     newTeam[mode.movement.currentHero].x = x - (x % 48);
     newTeam[mode.movement.currentHero].y = y - (y % 48);
     setPlayerTeam(newTeam);
@@ -91,20 +98,17 @@ const GrassCanvas = (props) => {
     });
 
     //turn off movement mode
-    let exitMovement = { active: false, currentHero: null };
-    toggleMovement(exitMovement);
+    endMovement();
   }
 
   useEffect(() => {
     let newTeam = {};
-    console.log("here");
     for (const [key, value] of Object.entries(roster)) {
       let sprite = new Image();
       sprite.src = roster[key].spriteSheet;
       let newObj = { ...roster[key] };
       newObj.spriteSheet = sprite;
       newTeam = { ...newTeam, [newObj.name]: newObj };
-      console.log(newTeam);
     }
     setPlayerTeam(newTeam);
     setFirstRender(false);
@@ -114,7 +118,6 @@ const GrassCanvas = (props) => {
     if (firstRender) {
       return;
     }
-    console.log(playerTeam);
     const canvasDiv = document.getElementById("canvas-div");
     const oldCanvas = document.getElementById("newCanvas");
     const newCanvas = document.createElement("canvas");
@@ -141,7 +144,6 @@ const GrassCanvas = (props) => {
         let spriteSheet = hero.spriteSheet;
 
         if (!hero.spriteSheet.complete) {
-          console.log("notLoaded");
           spriteSheet.onload = () => {
             setSpritesLoaded(true);
             context.drawImage(
@@ -157,13 +159,11 @@ const GrassCanvas = (props) => {
             );
           };
         } else {
-          console.log("drawingAlreadyLoaded");
           context.drawImage(spriteSheet, 48, 0, 48, 48, hero.x, hero.y, 48, 48);
         }
       }
 
       if (oldCanvas) {
-        console.log("removing");
         oldCanvas.remove();
       }
       canvasDiv.appendChild(newCanvas);
