@@ -73,12 +73,21 @@ const GrassCanvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
+    //update component playerTeam state
     let newTeam = playerTeam;
     console.log(mode.movement.currentHero, playerTeam);
     newTeam[mode.movement.currentHero].x = x - (x % 48);
     newTeam[mode.movement.currentHero].y = y - (y % 48);
-
     setPlayerTeam(newTeam);
+
+    //update redux state (necessary to save player positions on refresh)
+    updateXY({
+      name: mode.movement.currentHero,
+      x: x - (x % 48),
+      y: y - (y % 48),
+    });
+
+    //turn off movement mode
     let exitMovement = { active: false, currentHero: null };
     toggleMovement(exitMovement);
   }

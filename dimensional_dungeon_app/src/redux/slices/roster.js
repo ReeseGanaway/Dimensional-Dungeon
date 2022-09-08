@@ -17,7 +17,7 @@ export const roster = createSlice({
       if (name != undefined) {
         return {
           ...state,
-          [action.payload.name]: {
+          [name]: {
             ...state[name],
             x: action.payload.x,
             y: action.payload.y,
