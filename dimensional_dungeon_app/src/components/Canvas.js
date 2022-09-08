@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { rosterActions } from "../redux/slices/roster";
-import RosterCreation from "./RosterCreation";
 import { modeActions } from "../redux/slices/mode";
 import "./Canvas.css";
 
@@ -28,8 +27,12 @@ const GrassCanvas = (props) => {
     dispatch(rosterActions.updateXY(newPosition));
   };
 
-  const clearRoster = () => {
-    dispatch(rosterActions.clearRoster());
+  // const clearRoster = () => {
+  //   dispatch(rosterActions.clearRoster());
+  // };
+
+  const resetRoster = () => {
+    dispatch(rosterActions.resetRoster());
   };
 
   const toggleMovement = (movement) => {
@@ -170,6 +173,11 @@ const GrassCanvas = (props) => {
 
   return (
     <div className="container-lg">
+      <div className="row reset-roster">
+        <button className="btn reset-button" onClick={() => resetRoster()}>
+          Reset
+        </button>
+      </div>
       <div id="full-ui" className="full-ui row justify-content-center">
         <div id="canvas-div" className="canvas-div col-md-auto"></div>
         <div id="hero-info" className="hero-info col-4">
@@ -201,7 +209,9 @@ const GrassCanvas = (props) => {
                 </div>
               </>
             ) : (
-              <div className="col">Select a hero</div>
+              <div className="col">
+                <h5>Select a hero</h5>
+              </div>
             )}
           </div>
         </div>

@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { Action } from "history";
+import { initialRoster } from "./initialRoster";
 
 export const roster = createSlice({
   name: "roster",
-  initialState: {},
+  initialState: initialRoster,
   reducers: {
     addHero(state, action) {
       const { name, spriteSheet, x, y } = action.payload;
@@ -14,7 +14,7 @@ export const roster = createSlice({
     },
     updateXY(state, action) {
       const name = action.payload.name;
-      if (name != undefined) {
+      if (name !== undefined) {
         return {
           ...state,
           [name]: {
@@ -27,6 +27,9 @@ export const roster = createSlice({
     },
     clearRoster(state, action) {
       return {};
+    },
+    resetRoster(state, action) {
+      return initialRoster;
     },
   },
 });
