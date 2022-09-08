@@ -3,18 +3,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { rosterActions } from "../redux/slices/roster";
 import { modeActions } from "../redux/slices/mode";
 import "./Canvas.css";
+import TeamSelection from "./TeamSelection";
 
 const GrassCanvas = (props) => {
   const roster = useSelector((state) => state.roster);
   const mode = useSelector((state) => state.mode);
   const dispatch = useDispatch();
-  const [canvas, setCanvas] = useState(document.createElement("canvas"));
-  const canvasRef = useRef(null);
 
-  const [characterUpdate, setCharacterUpdate] = useState(false);
   const [playerTeam, setPlayerTeam] = useState({});
   const [firstRender, setFirstRender] = useState(true);
-  const [spritesLoaded, setSpritesLoaded] = useState(false);
 
   const mapImage = new Image();
   mapImage.src = "/images/grassMap.png";
@@ -70,11 +67,12 @@ const GrassCanvas = (props) => {
         ) {
           const newMovement = {
             active: true,
-            currentHero: roster[key].name,
+            currentHero: playerTeam[key].name,
           };
 
           //put us in movement mode
           toggleMovement(newMovement);
+          console.log(playerTeam);
 
           break;
         }
@@ -121,7 +119,6 @@ const GrassCanvas = (props) => {
     const canvasDiv = document.getElementById("canvas-div");
     const oldCanvas = document.getElementById("newCanvas");
     const newCanvas = document.createElement("canvas");
-    setCanvas(newCanvas);
 
     newCanvas.addEventListener("mousedown", function (e) {
       handleClick.bind(this)(newCanvas, e);
@@ -135,8 +132,6 @@ const GrassCanvas = (props) => {
 
       const context = newCanvas.getContext("2d");
       context.drawImage(mapImage, 0, 0);
-      setCanvas(newCanvas);
-      //console.log(newCanvas);
 
       for (const [key, value] of Object.entries(playerTeam)) {
         const hero = value;
@@ -145,7 +140,6 @@ const GrassCanvas = (props) => {
 
         if (!hero.spriteSheet.complete) {
           spriteSheet.onload = () => {
-            setSpritesLoaded(true);
             context.drawImage(
               spriteSheet,
               48,
@@ -215,7 +209,10 @@ const GrassCanvas = (props) => {
           </div>
         </div>
       </div>
-      <div className="row">{}</div>
+      <div className="row">
+        <div className="col"></div>
+        <TeamSelection playerTeam={playerTeam} setPlayerTeam={setPlayerTeam} />
+      </div>
     </div>
   );
 };
