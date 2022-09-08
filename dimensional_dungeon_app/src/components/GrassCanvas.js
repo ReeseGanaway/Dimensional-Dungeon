@@ -41,7 +41,15 @@ const GrassCanvas = (props) => {
   };
 
   const resetMode = () => {
-    dispatch(modeActions.resetMode);
+    dispatch(modeActions.resetMode());
+  };
+
+  const activateTeamSelection = () => {
+    dispatch(modeActions.activateTeamSelection());
+  };
+
+  const deactivateTeamSelection = () => {
+    dispatch(modeActions.deactivateTeamSelection());
   };
 
   function handleClick(canvas, e) {
@@ -100,6 +108,7 @@ const GrassCanvas = (props) => {
   }
 
   useEffect(() => {
+    activateTeamSelection();
     let newTeam = {};
     for (const [key, value] of Object.entries(roster)) {
       let sprite = new Image();
@@ -166,10 +175,17 @@ const GrassCanvas = (props) => {
 
   return (
     <div className="container-lg">
-      <div className="row reset-roster">
-        <button className="btn reset-button" onClick={() => resetRoster()}>
-          Reset
-        </button>
+      <div className="row justify-content-center reset-redux-states">
+        <div className="col-md-auto">
+          <button className="btn reset-button" onClick={() => resetRoster()}>
+            Reset Roster
+          </button>
+        </div>
+        <div className="col-md-auto">
+          <button className="btn reset-button" onClick={() => resetMode()}>
+            Reset Mode
+          </button>
+        </div>
       </div>
       <div id="full-ui" className="full-ui row justify-content-center">
         <div id="canvas-div" className="canvas-div col-md-auto"></div>
