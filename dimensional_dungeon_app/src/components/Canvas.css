@@ -10,3 +10,10 @@
     padding: 0px;
     background-color: black;
 }
+
+.hero-info-row{
+    padding-bottom: 10px ;
+}
+.hero-info-sub-row{
+    padding-bottom: 5px ;
+}

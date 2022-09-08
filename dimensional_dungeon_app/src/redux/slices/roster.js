@@ -6,11 +6,9 @@ export const roster = createSlice({
   initialState: {},
   reducers: {
     addHero(state, action) {
-      console.log(action.payload);
       const { name, spriteSheet, x, y } = action.payload;
 
       if (name != null && spriteSheet != null && x != null && y != null) {
-        console.log("here");
         return { ...state, [action.payload.name]: action.payload };
       }
     },

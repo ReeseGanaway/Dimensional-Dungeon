@@ -14,6 +14,8 @@ const Canvas = (props) => {
 
   const [characterUpdate, setCharacterUpdate] = useState(false);
   const [playerTeam, setPlayerTeam] = useState({});
+  const [firstRender, setFirstRender] = useState(true);
+  const [spritesLoaded, setSpritesLoaded] = useState(false);
 
   const mapImage = new Image();
   mapImage.src = "/images/grassMap.png";
@@ -47,13 +49,13 @@ const Canvas = (props) => {
     //if we arent in movement mode...
     else {
       //cycle through player's team
-      for (const [key, value] of Object.entries(roster)) {
+      for (const [key, value] of Object.entries(playerTeam)) {
         //if the coordinates of the click are on the same 48 x 48 tile as one of the ally characters
         if (
-          x >= roster[key].x &&
-          x <= roster[key].x + 47 &&
-          y >= roster[key].y &&
-          y <= roster[key].y + 47
+          x >= value.x &&
+          x <= value.x + 47 &&
+          y >= value.y &&
+          y <= value.y + 47
         ) {
           const newMovement = {
             active: true,
@@ -72,20 +74,36 @@ const Canvas = (props) => {
   //function for moving the character
   function moveCharacter(x, y) {
     let newTeam = playerTeam;
-    updateXY({
-      name: mode.movement.currentHero,
-      x: x - (x % 48),
-      y: y - (y % 48),
-    });
-    // roster[movement.currentHero].x = x - (x % 48);
-    // roster[movement.currentHero].y = y - (y % 48);
+    console.log(mode.movement.currentHero, playerTeam);
+    newTeam[mode.movement.currentHero].x = x - (x % 48);
+    newTeam[mode.movement.currentHero].y = y - (y % 48);
+
     setPlayerTeam(newTeam);
     let exitMovement = { active: false, currentHero: null };
     toggleMovement(exitMovement);
-    //console.log(mode, roster["batman"]);
   }
 
   useEffect(() => {
+    let newTeam = {};
+    console.log("here");
+    for (const [key, value] of Object.entries(roster)) {
+      let sprite = new Image();
+      sprite.src = roster[key].spriteSheet;
+      let newObj = { ...roster[key] };
+      newObj.spriteSheet = sprite;
+      const name = newObj.name;
+      newTeam = { ...newTeam, [newObj.name]: newObj };
+      console.log(newTeam);
+    }
+    setPlayerTeam(newTeam);
+    setFirstRender(false);
+  }, []);
+
+  useEffect(() => {
+    if (firstRender) {
+      return;
+    }
+    console.log(playerTeam);
     const canvasDiv = document.getElementById("canvas-div");
     const oldCanvas = document.getElementById("newCanvas");
     const newCanvas = document.createElement("canvas");
@@ -106,53 +124,80 @@ const Canvas = (props) => {
       setCanvas(newCanvas);
       //console.log(newCanvas);
 
-      for (const [key, value] of Object.entries(roster)) {
-        let sprite = new Image();
-        sprite.src = roster[key].spriteSheet;
-        console.log(sprite);
-        sprite.onload = () => {
-          context.drawImage(
-            sprite,
-            48,
-            0,
-            48,
-            48,
-            roster[key].x,
-            roster[key].y,
-            48,
-            48
-          );
-        };
+      for (const [key, value] of Object.entries(playerTeam)) {
+        const hero = value;
+
+        let spriteSheet = hero.spriteSheet;
+
+        if (!spritesLoaded) {
+          console.log("notLoaded");
+          spriteSheet.onload = () => {
+            setSpritesLoaded(true);
+            context.drawImage(
+              spriteSheet,
+              48,
+              0,
+              48,
+              48,
+              hero.x,
+              hero.y,
+              48,
+              48
+            );
+          };
+        } else {
+          console.log("drawingAlreadyLoaded");
+          context.drawImage(spriteSheet, 48, 0, 48, 48, hero.x, hero.y, 48, 48);
+        }
       }
+
       if (oldCanvas) {
+        console.log("removing");
         oldCanvas.remove();
       }
       canvasDiv.appendChild(newCanvas);
     };
-  }, [roster, mode]);
+  }, [roster, mode, playerTeam]);
 
   return (
-    <div id="full-ui" className="full-ui row">
-      <div id="canvas-div" className="canvas-div col-md-auto"></div>
-      <div id="hero-info" className="hero-info col-md-auto">
-        <div className="row">
-          <h6>Round 1</h6>
-        </div>
-        <div className="row">
-          {mode.movement.currentHero ? (
-            <>
-              <div className="col">
-                {roster[mode.movement.currentHero].displayName}
-              </div>
-              <div className="col">
-                <img src={roster[mode.movement.currentHero].spriteSheet} />
-              </div>
-            </>
-          ) : (
-            "Select a hero"
-          )}
+    <div className="container-lg">
+      <div id="full-ui" className="full-ui row justify-content-center">
+        <div id="canvas-div" className="canvas-div col-md-auto"></div>
+        <div id="hero-info" className="hero-info col-4">
+          <div className="row">
+            {mode.movement.currentHero && Object.keys(playerTeam).length > 0 ? (
+              <>
+                <div className="row hero-info-row">
+                  <div className="col current-hero-display-icon">
+                    <h5>{playerTeam[mode.movement.currentHero].displayName}</h5>
+                  </div>
+                  <div className="col-md-auto current-hero-display-icon">
+                    <img
+                      src={playerTeam[mode.movement.currentHero].displayIcon}
+                    />
+                  </div>
+                </div>
+                <div className="row hero-info-row">
+                  <div className="row hero-info--sub-row">
+                    <h5>Current Tile (Coordinates)</h5>
+                  </div>
+                  <div className="row hero-info-sub-row">
+                    <div className="col">
+                      x:{playerTeam[mode.movement.currentHero].x / 48 + 1}
+                    </div>
+                    <div className="col">
+                      y:{playerTeam[mode.movement.currentHero].y / 48 + 1}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="col">Select a hero</div>
+            )}
+          </div>
         </div>
       </div>
+      <div className="row">{}</div>
     </div>
   );
 };
