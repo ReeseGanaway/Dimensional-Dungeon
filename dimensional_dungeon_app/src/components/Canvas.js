@@ -103,7 +103,6 @@ const GrassCanvas = (props) => {
       sprite.src = roster[key].spriteSheet;
       let newObj = { ...roster[key] };
       newObj.spriteSheet = sprite;
-      const name = newObj.name;
       newTeam = { ...newTeam, [newObj.name]: newObj };
       console.log(newTeam);
     }
@@ -141,7 +140,7 @@ const GrassCanvas = (props) => {
 
         let spriteSheet = hero.spriteSheet;
 
-        if (!spritesLoaded) {
+        if (!hero.spriteSheet.complete) {
           console.log("notLoaded");
           spriteSheet.onload = () => {
             setSpritesLoaded(true);
