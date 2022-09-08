@@ -5,7 +5,7 @@ import RosterCreation from "./RosterCreation";
 import { modeActions } from "../redux/slices/mode";
 import "./Canvas.css";
 
-const Canvas = (props) => {
+const GrassCanvas = (props) => {
   const roster = useSelector((state) => state.roster);
   const mode = useSelector((state) => state.mode);
   const dispatch = useDispatch();
@@ -201,4 +201,4 @@ const Canvas = (props) => {
     </div>
   );
 };
-export default Canvas;
+export default GrassCanvas;
