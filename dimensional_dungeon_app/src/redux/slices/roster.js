@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { initialRoster } from "./initialRoster";
+import { initialRoster } from "./initialStateConstants";
 
 export const roster = createSlice({
   name: "roster",
