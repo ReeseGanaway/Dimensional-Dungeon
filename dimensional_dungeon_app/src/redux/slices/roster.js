@@ -5,11 +5,30 @@ export const roster = createSlice({
   name: "roster",
   initialState: initialRoster,
   reducers: {
-    addHero(state, action) {
-      const { name, spriteSheet, x, y } = action.payload;
+    addHeroCollection(state, action) {
+      const { name, spriteSheet } = action.payload;
 
-      if (name != null && spriteSheet != null && x != null && y != null) {
-        return { ...state, [action.payload.name]: action.payload };
+      if (name != null && spriteSheet != null) {
+        return {
+          ...state,
+          collection: {
+            ...state.collection,
+            [action.payload.name]: action.payload,
+          },
+        };
+      }
+    },
+    addHeroActive(state, action) {
+      const { name, spriteSheet } = action.payload;
+
+      if (name != null && spriteSheet != null) {
+        return {
+          ...state,
+          activeRoster: {
+            ...state.activeRoster,
+            [action.payload.name]: action.payload,
+          },
+        };
       }
     },
     updateXY(state, action) {
@@ -17,10 +36,13 @@ export const roster = createSlice({
       if (name !== undefined) {
         return {
           ...state,
-          [name]: {
-            ...state[name],
-            x: action.payload.x,
-            y: action.payload.y,
+          activeRoster: {
+            ...state.activeRoster,
+            [name]: {
+              ...state.activeRoster[name],
+              x: action.payload.x,
+              y: action.payload.y,
+            },
           },
         };
       }

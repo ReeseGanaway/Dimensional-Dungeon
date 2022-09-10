@@ -14,6 +14,7 @@ const GrassCanvas = (props) => {
 
   //individual data in states
   const selectedHero = mode.selectedHero;
+  const activeRoster = roster.activeRoster;
 
   const dispatch = useDispatch();
 
@@ -23,8 +24,8 @@ const GrassCanvas = (props) => {
   const mapImage = new Image();
   mapImage.src = "/images/grassMap.png";
 
-  const addHero = (hero) => {
-    dispatch(rosterActions.addHero(hero));
+  const addHeroActive = (hero) => {
+    dispatch(rosterActions.addHeroActive(hero));
   };
 
   const updateXY = (newPosition) => {
@@ -85,12 +86,12 @@ const GrassCanvas = (props) => {
     //if user is still in process of choosing team
     if (mode.teamSelection.active) {
       //if user has selected a hero to use, but hasnt placed them on the canvas yet
-      if (mode.teamSelection.currentHero) {
+      if (selectedHero.hero) {
         setNewHero(x, y);
       }
 
       //if user has selected a hero that is already on the canvas, but they want to move it
-      else if (!mode.teamSelection.currentHero && checkTileForHero(x, y)) {
+      else if (!selectedHero.hero && checkTileForHero(x, y)) {
         const currentHero = checkTileForHero(x, y);
         moveHeroDuringTeamSelect(currentHero);
       }
@@ -102,7 +103,7 @@ const GrassCanvas = (props) => {
     //if we arent in movement mode...
     else {
       //cycle through player's team
-      for (const [key, value] of Object.entries(playerTeam)) {
+      for (const [key, value] of Object.entries(activeRoster)) {
         //if the coordinates of the click are on the same 48 x 48 tile as one of the ally characters
         if (
           x >= value.x &&
@@ -110,14 +111,14 @@ const GrassCanvas = (props) => {
           y >= value.y &&
           y <= value.y + 47
         ) {
+          setSelectedHero(activeRoster[key]);
           const newMovement = {
             active: true,
-            currentHero: playerTeam[key].name,
+            currentHero: activeRoster[key].name,
           };
 
           //put us in movement mode
           toggleMovement(newMovement);
-          console.log(playerTeam);
 
           break;
         }
@@ -129,7 +130,7 @@ const GrassCanvas = (props) => {
 
   //function to check if a character is on the tile clicked by user
   function checkTileForHero(x, y) {
-    for (const [key, value] of Object.entries(playerTeam)) {
+    for (const [key, value] of Object.entries(activeRoster)) {
       //if the coordinates of the click are on the same 48 x 48 tile as one of the ally characters
       if (
         x >= value.x &&
@@ -144,8 +145,7 @@ const GrassCanvas = (props) => {
   }
 
   function moveHeroDuringTeamSelect(name) {
-    const tempHero = { ...playerTeam[name] };
-    delete tempHero.sprite;
+    const tempHero = { ...activeRoster[name] };
     setSelectedHero(tempHero);
     delete playerTeam[name];
     let canvas = document.getElementById("canvas-div");
@@ -156,23 +156,19 @@ const GrassCanvas = (props) => {
   //function for setting character coords when in tem selection mode
   function setNewHero(x, y) {
     const newPosition = {
-      name: mode.teamSelection.currentHero,
+      name: selectedHero.hero.name,
       x: x - (x % 48),
       y: y - (y % 48),
     };
     updateXY(newPosition);
-    let newTeam = playerTeam;
-    newTeam[mode.teamSelection.currentHero] = {
-      ...roster[mode.teamSelection.currentHero],
-      sprite: null,
-    };
-
+    console.log("playerTeam: ", playerTeam);
+    let newTeamSprites = { ...playerTeam };
     let sprite = new Image();
-    sprite.src = newTeam[mode.teamSelection.currentHero].spriteSheet;
-    newTeam[mode.teamSelection.currentHero].sprite = sprite;
-    newTeam[mode.teamSelection.currentHero].x = x - (x % 48);
-    newTeam[mode.teamSelection.currentHero].y = y - (y % 48);
-    setPlayerTeam(newTeam);
+    sprite.src = selectedHero.hero.spriteSheet;
+
+    newTeamSprites[selectedHero.hero.name] = sprite;
+
+    setPlayerTeam(newTeamSprites);
     setTeamSelectionHero(null);
     let canvas = document.getElementById("canvas-div");
     canvas.style.cursor = "";
@@ -181,15 +177,9 @@ const GrassCanvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
-    //update component playerTeam state
-    let newTeam = playerTeam;
-    newTeam[mode.movement.currentHero].x = x - (x % 48);
-    newTeam[mode.movement.currentHero].y = y - (y % 48);
-    setPlayerTeam(newTeam);
-
     //update redux state (necessary to save player positions on refresh)
     updateXY({
-      name: mode.movement.currentHero,
+      name: selectedHero.hero.name,
       x: x - (x % 48),
       y: y - (y % 48),
     });
@@ -199,21 +189,21 @@ const GrassCanvas = (props) => {
   }
 
   useEffect(() => {
+    setFirstRender(false);
     if (!mode.battle.active) {
-      resetRoster();
       activateTeamSelection();
     }
 
-    let newTeam = {};
-    for (const [key, value] of Object.entries(roster)) {
-      let sprite = new Image();
-      sprite.src = roster[key].spriteSheet;
-      let newObj = { ...roster[key] };
-      newObj.spriteSheet = sprite;
-      newTeam = { ...newTeam, [newObj.name]: newObj };
+    let newTeamSprites = {};
+    if (Object.keys(roster.activeRoster).length > 0) {
+      for (const [key, value] of Object.entries(roster.activeRoster)) {
+        let sprite = new Image();
+        sprite.src = value.spriteSheet;
+
+        newTeamSprites = { ...newTeamSprites, [value.name]: sprite };
+      }
+      setPlayerTeam(newTeamSprites);
     }
-    //setPlayerTeam(newTeam);
-    setFirstRender(false);
   }, []);
 
   useEffect(() => {
@@ -240,29 +230,32 @@ const GrassCanvas = (props) => {
 
       if (Object.keys(playerTeam).length > 0) {
         for (const [key, value] of Object.entries(playerTeam)) {
-          // console.log("here");
-          const hero = value;
-
-          let sprite = hero.sprite;
-
-          if (hero.x != null && hero.y != null) {
-            if (!hero.sprite.complete) {
-              sprite.onload = () => {
-                context.drawImage(
-                  sprite,
-                  48,
-                  0,
-                  48,
-                  48,
-                  hero.x,
-                  hero.y,
-                  48,
-                  48
-                );
-              };
-            } else {
-              context.drawImage(sprite, 48, 0, 48, 48, hero.x, hero.y, 48, 48);
-            }
+          if (!value.complete) {
+            value.onload = () => {
+              context.drawImage(
+                value,
+                48,
+                0,
+                48,
+                48,
+                activeRoster[key].x,
+                activeRoster[key].y,
+                48,
+                48
+              );
+            };
+          } else {
+            context.drawImage(
+              value,
+              48,
+              0,
+              48,
+              48,
+              activeRoster[key].x,
+              activeRoster[key].y,
+              48,
+              48
+            );
           }
         }
       }
@@ -320,7 +313,7 @@ const GrassCanvas = (props) => {
                   <div className="row hero-info-sub-row">
                     <div className="col">
                       x:
-                      {selectedHero.hero.x
+                      {selectedHero.hero.x !== null
                         ? selectedHero.hero.x
                         : //playerTeam[selectedHero.hero.name]
                           //? playerTeam[selectedHero.hero.name].x
@@ -331,7 +324,7 @@ const GrassCanvas = (props) => {
                     </div>
                     <div className="col">
                       y:
-                      {selectedHero.hero.y
+                      {selectedHero.hero.y !== null
                         ? selectedHero.hero.y
                         : //playerTeam[selectedHero.hero.name]
                           //? playerTeam[selectedHero.hero.name].x
@@ -360,7 +353,12 @@ const GrassCanvas = (props) => {
       </div>
       <div className="row">
         <div className="col"></div>
-        <TeamSelection playerTeam={playerTeam} setPlayerTeam={setPlayerTeam} />
+        {!mode.battle.active ? (
+          <TeamSelection
+            playerTeam={playerTeam}
+            setPlayerTeam={setPlayerTeam}
+          />
+        ) : null}
       </div>
     </div>
   );

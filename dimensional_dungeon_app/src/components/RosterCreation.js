@@ -13,6 +13,10 @@ const RosterCreation = () => {
     dispatch(rosterActions.addHero(hero));
   };
 
+  const resetRoster = (hero) => {
+    dispatch(rosterActions.resetRoster());
+  };
+
   const updateXY = (hero) => {
     dispatch(rosterActions.updateXY(hero));
   };
@@ -56,6 +60,8 @@ const RosterCreation = () => {
         onClick={handleClick2}
         src="/images/robin/robinDown2.png"
       ></input>
+
+      <button onClick={() => resetRoster()}>here</button>
     </Fragment>
   );
 };
