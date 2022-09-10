@@ -199,6 +199,7 @@ const GrassCanvas = (props) => {
   }
 
   useEffect(() => {
+    resetRoster();
     activateTeamSelection();
     let newTeam = {};
     for (const [key, value] of Object.entries(roster)) {
