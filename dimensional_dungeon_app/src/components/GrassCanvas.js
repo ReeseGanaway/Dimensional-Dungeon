@@ -21,6 +21,14 @@ const GrassCanvas = (props) => {
   const [playerTeam, setPlayerTeam] = useState({});
   const [firstRender, setFirstRender] = useState(true);
 
+  //state used to limit where players can place heroes during team select
+  const [teamSelectTiles, setTeamSelectTiles] = useState({
+    1: { x1: 0, x2: 47, y1: 0, y2: 47 },
+    2: { x1: 48, x2: 95, y1: 0, y2: 47 },
+    3: { x1: 0, x2: 47, y1: 48, y2: 95 },
+    2: { x1: 48, x2: 95, y1: 48, y2: 95 },
+  });
+
   const mapImage = new Image();
   mapImage.src = "/images/grassMap.png";
 
@@ -161,7 +169,6 @@ const GrassCanvas = (props) => {
       y: y - (y % 48),
     };
     updateXY(newPosition);
-    console.log("playerTeam: ", playerTeam);
     let newTeamSprites = { ...playerTeam };
     let sprite = new Image();
     sprite.src = selectedHero.hero.spriteSheet;
@@ -193,6 +200,7 @@ const GrassCanvas = (props) => {
     if (!mode.battle.active) {
       activateTeamSelection();
     }
+    setSelectedHero(null);
 
     let newTeamSprites = {};
     if (Object.keys(roster.activeRoster).length > 0) {
@@ -353,7 +361,7 @@ const GrassCanvas = (props) => {
       </div>
       <div className="row">
         <div className="col"></div>
-        {!mode.battle.active ? (
+        {!mode.battle.active && mode.teamSelection.active ? (
           <TeamSelection
             playerTeam={playerTeam}
             setPlayerTeam={setPlayerTeam}
