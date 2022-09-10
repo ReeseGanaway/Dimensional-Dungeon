@@ -84,6 +84,10 @@ const GrassCanvas = (props) => {
     dispatch(modeActions.setSelectedHero(hero));
   };
 
+  const resetActiveHeroes = () => {
+    dispatch(rosterActions.resetActiveHeroes());
+  };
+
   //function to determine and handle what should be happening when the canvas is clicked
   function handleClick(canvas, e) {
     //get the coordinates of the user's cursor on click
@@ -297,6 +301,17 @@ const GrassCanvas = (props) => {
             }}
           >
             Start Game
+          </button>
+        </div>
+        <div className="col-md-auto">
+          <button
+            className="btn reset-active-heroes"
+            onClick={() => {
+              resetActiveHeroes();
+              setPlayerTeam({});
+            }}
+          >
+            Reset Active Heroes
           </button>
         </div>
       </div>

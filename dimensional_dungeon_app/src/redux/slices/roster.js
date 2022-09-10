@@ -31,6 +31,12 @@ export const roster = createSlice({
         };
       }
     },
+    resetActiveHeroes(state, action) {
+      return {
+        ...state,
+        activeRoster: {},
+      };
+    },
     updateXY(state, action) {
       const name = action.payload.name;
       if (name !== undefined) {
