@@ -26,6 +26,7 @@ export const mode = createSlice({
       return {
         ...state,
         movement: { ...state.movement, active: false, currentHero: null },
+        selectedHero: { ...state.selectedHero, hero: null },
       };
     },
     activateTeamSelection(state) {
@@ -42,6 +43,7 @@ export const mode = createSlice({
           active: false,
           currentHero: null,
         },
+        selectedHero: { ...state.selectedHero, hero: null },
       };
     },
     resetTeamSelection(state) {

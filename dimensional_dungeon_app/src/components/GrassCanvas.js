@@ -71,6 +71,10 @@ const GrassCanvas = (props) => {
     dispatch(modeActions.deactivateBattle());
   };
 
+  const setSelectedHero = (hero) => {
+    dispatch(modeActions.setSelectedHero(hero));
+  };
+
   //function to determine and handle what should be happening when the canvas is clicked
   function handleClick(canvas, e) {
     //get the coordinates of the user's cursor on click
@@ -86,7 +90,7 @@ const GrassCanvas = (props) => {
       }
 
       //if user has selected a hero that is already on the canvas, but they want to move it
-      else if (!mode.teamSelection.currentHero) {
+      else if (!mode.teamSelection.currentHero && checkTileForHero(x, y)) {
         const currentHero = checkTileForHero(x, y);
         moveHeroDuringTeamSelect(currentHero);
       }
@@ -141,6 +145,8 @@ const GrassCanvas = (props) => {
 
   function moveHeroDuringTeamSelect(name) {
     const tempHero = { ...playerTeam[name] };
+    delete tempHero.sprite;
+    setSelectedHero(tempHero);
     delete playerTeam[name];
     let canvas = document.getElementById("canvas-div");
     canvas.style.cursor = 'url("' + tempHero.displayIcon + '") 25 15, auto';
@@ -170,6 +176,7 @@ const GrassCanvas = (props) => {
     setTeamSelectionHero(null);
     let canvas = document.getElementById("canvas-div");
     canvas.style.cursor = "";
+    setSelectedHero(null);
   }
 
   //function for moving the character
@@ -292,16 +299,14 @@ const GrassCanvas = (props) => {
         <div id="canvas-div" className="canvas-div col-md-auto"></div>
         <div id="hero-info" className="hero-info col-4">
           <div className="row">
-            {mode.movement.currentHero && Object.keys(playerTeam).length > 0 ? (
+            {selectedHero.hero ? (
               <>
                 <div className="row hero-info-row">
                   <div className="col current-hero-display-icon">
-                    <h5>{playerTeam[mode.movement.currentHero].displayName}</h5>
+                    <h5>{selectedHero.hero.displayName}</h5>
                   </div>
                   <div className="col-md-auto current-hero-display-icon">
-                    <img
-                      src={playerTeam[mode.movement.currentHero].displayIcon}
-                    />
+                    <img src={selectedHero.hero.displayIcon} />
                   </div>
                 </div>
                 <div className="row hero-info-row">
@@ -311,15 +316,32 @@ const GrassCanvas = (props) => {
                   <div className="row hero-info-sub-row">
                     <div className="col">
                       x:
-                      {playerTeam[mode.movement.currentHero].x
-                        ? playerTeam[mode.movement.currentHero].x / 48 + 1
-                        : "x: N/A"}
+                      {selectedHero.hero.x
+                        ? selectedHero.hero.x
+                        : //playerTeam[selectedHero.hero.name]
+                          //? playerTeam[selectedHero.hero.name].x
+                          //? playerTeam[selectedHero.hero.name].x / 48 + 1
+                          // : " N/A"
+                          // : " N/A"
+                          " N/A"}
                     </div>
                     <div className="col">
                       y:
-                      {playerTeam[mode.movement.currentHero].y
-                        ? playerTeam[mode.movement.currentHero].y / 48 + 1
-                        : "y: N/A"}
+                      {selectedHero.hero.y
+                        ? selectedHero.hero.y
+                        : //playerTeam[selectedHero.hero.name]
+                          //? playerTeam[selectedHero.hero.name].x
+                          //? playerTeam[selectedHero.hero.name].x / 48 + 1
+                          // : " N/A"
+                          // : " N/A"
+                          " N/A"}
+                      {/* {Object.keys(playerTeam).length > 0
+                        ? playerTeam[selectedHero.hero.name]
+                          ? playerTeam[selectedHero.hero.name].y
+                            ? playerTeam[selectedHero.hero.name].y / 48 + 1
+                            : " N/A"
+                          : " N/A"
+                        : " N/A"} */}
                     </div>
                   </div>
                 </div>
