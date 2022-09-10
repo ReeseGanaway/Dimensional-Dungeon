@@ -199,8 +199,11 @@ const GrassCanvas = (props) => {
   }
 
   useEffect(() => {
-    resetRoster();
-    activateTeamSelection();
+    if (!mode.battle.active) {
+      resetRoster();
+      activateTeamSelection();
+    }
+
     let newTeam = {};
     for (const [key, value] of Object.entries(roster)) {
       let sprite = new Image();
