@@ -23,10 +23,10 @@ const GrassCanvas = (props) => {
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
-    1: { x1: 0, x2: 47, y1: 0, y2: 47 },
-    2: { x1: 48, x2: 95, y1: 0, y2: 47 },
-    3: { x1: 0, x2: 47, y1: 48, y2: 95 },
-    2: { x1: 48, x2: 95, y1: 48, y2: 95 },
+    1: { x: 0, y: 0 },
+    2: { x: 48, y: 0 },
+    3: { x: 0, y: 48 },
+    4: { x: 48, y: 48 },
   });
 
   const mapImage = new Image();
@@ -103,7 +103,9 @@ const GrassCanvas = (props) => {
     if (mode.teamSelection.active) {
       //if user has selected a hero to use, but hasnt placed them on the canvas yet
       if (selectedHero.hero) {
-        setNewHero(x, y);
+        if (checkTeamSelectTile(x, y)) {
+          setNewHero(x, y);
+        }
       }
 
       //if user has selected a hero that is already on the canvas, but they want to move it
@@ -160,16 +162,30 @@ const GrassCanvas = (props) => {
     return null;
   }
 
+  function checkTeamSelectTile(x, y) {
+    for (const [key, value] of Object.entries(teamSelectTiles)) {
+      //if the coordinates of the click are on the same 48 x 48 tile as one of the ally characters
+      if (
+        x >= value.x &&
+        x <= value.x + 47 &&
+        y >= value.y &&
+        y <= value.y + 47
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function moveHeroDuringTeamSelect(name) {
     const tempHero = { ...activeRoster[name] };
     setSelectedHero(tempHero);
     delete playerTeam[name];
     let canvas = document.getElementById("canvas-div");
     canvas.style.cursor = 'url("' + tempHero.displayIcon + '") 25 15, auto';
-    setTeamSelectionHero(name);
   }
 
-  //function for setting character coords when in tem selection mode
+  //function for setting character coords when in team selection mode
   function setNewHero(x, y) {
     const newPosition = {
       name: selectedHero.hero.name,
@@ -250,6 +266,13 @@ const GrassCanvas = (props) => {
 
       const context = newCanvas.getContext("2d");
       context.drawImage(mapImage, 0, 0);
+
+      if (mode.teamSelection.active) {
+        context.fillStyle = "rgba(0,0,255,0.3)";
+        for (const [key, value] of Object.entries(teamSelectTiles)) {
+          context.fillRect(value.x, value.y, 48, 48);
+        }
+      }
 
       if (Object.keys(playerTeam).length > 0) {
         for (const [key, value] of Object.entries(playerTeam)) {
