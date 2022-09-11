@@ -23,6 +23,10 @@ const TeamSelection = (props) => {
     dispatch(rosterActions.addHeroActive(hero));
   };
 
+  const removeActiveHero = (name) => {
+    dispatch(rosterActions.deleteActiveHero(name));
+  };
+
   const displayHero = () => {
     return Object.keys(collection).map((key) => {
       return (
@@ -39,14 +43,20 @@ const TeamSelection = (props) => {
 
   //function adds hero to active roster, but removes if the hero is already on the active roster
   const addToTeam = (hero) => {
+    //if hero is not currently in active roster
     if (!activeRoster.hasOwnProperty(hero.name)) {
       addHeroActive(hero);
-      //setTeamSelectionHero(hero.name);
       setSelectedHero(hero);
       let canvas = document.getElementById("canvas-div");
       canvas.style.cursor = 'url("' + hero.displayIcon + '") 25 15, auto';
       const teamSelectIcon = document.getElementById(hero.name);
       teamSelectIcon.className = "team-select-icon selected";
+    }
+    //if hero is currently in active roster
+    else {
+      const teamSelectIcon = document.getElementById(hero.name);
+      teamSelectIcon.className = "";
+      removeActiveHero(hero.name);
     }
 
     if (props.playerTeam[hero.name]) {

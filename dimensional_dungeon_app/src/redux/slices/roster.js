@@ -31,6 +31,11 @@ export const roster = createSlice({
         };
       }
     },
+    deleteActiveHero(state, action) {
+      let newState = { ...state };
+      delete newState.activeRoster[action.payload];
+      return void newState;
+    },
     resetActiveHeroes(state, action) {
       return {
         ...state,
