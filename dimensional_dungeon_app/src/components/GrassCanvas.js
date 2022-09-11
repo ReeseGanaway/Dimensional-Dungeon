@@ -210,7 +210,9 @@ const GrassCanvas = (props) => {
 
       for (const [key] of Object.entries(activeRoster)) {
         const teamSelectIcon = document.getElementById(key);
-        teamSelectIcon.className = "team-select-icon selected";
+        if (teamSelectIcon !== null) {
+          teamSelectIcon.className = "team-select-icon selected";
+        }
       }
     }
     setSelectedHero(null);
