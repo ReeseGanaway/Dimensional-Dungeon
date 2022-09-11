@@ -103,7 +103,16 @@ const GrassCanvas = (props) => {
     if (mode.teamSelection.active) {
       //if user has selected a hero to use, but hasnt placed them on the canvas yet
       if (selectedHero.hero) {
-        if (checkTeamSelectTile(x, y)) {
+        if (
+          checkTileForHero(x, y) &&
+          checkTileForHero(x, y) !== selectedHero.hero.name
+        ) {
+          window.alert("There is already a hero on this tile!");
+        } else if (!checkTeamSelectTile(x, y)) {
+          window.alert(
+            "Please place your character on one of the tiles highlighted blue!"
+          );
+        } else if (checkTeamSelectTile(x, y)) {
           setNewHero(x, y);
         }
       }
