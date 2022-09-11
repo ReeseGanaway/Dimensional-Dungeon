@@ -9,6 +9,7 @@ const TeamSelection = (props) => {
   const mode = useSelector((state) => state.mode);
 
   const collection = roster.collection;
+  const activeRoster = roster.activeRoster;
 
   const setTeamSelectionHero = (hero) => {
     dispatch(modeActions.setTeamSelectionHero(hero));
@@ -36,17 +37,21 @@ const TeamSelection = (props) => {
     });
   };
 
+  //function adds hero to active roster, but removes if the hero is already on the active roster
   const addToTeam = (hero) => {
-    addHeroActive(hero);
+    if (!activeRoster.hasOwnProperty(hero.name)) {
+      addHeroActive(hero);
+      //setTeamSelectionHero(hero.name);
+      setSelectedHero(hero);
+      let canvas = document.getElementById("canvas-div");
+      canvas.style.cursor = 'url("' + hero.displayIcon + '") 25 15, auto';
+      const teamSelectIcon = document.getElementById(hero.name);
+      teamSelectIcon.className = "team-select-icon selected";
+    }
+
     if (props.playerTeam[hero.name]) {
       delete props.playerTeam[hero.name];
     }
-
-    setTeamSelectionHero(hero.name);
-    setSelectedHero(hero);
-
-    let canvas = document.getElementById("canvas-div");
-    canvas.style.cursor = 'url("' + hero.displayIcon + '") 25 15, auto';
   };
 
   return (

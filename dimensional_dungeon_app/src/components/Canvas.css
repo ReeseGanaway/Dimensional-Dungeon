@@ -18,6 +18,6 @@
     padding-bottom: 5px ;
 }
 
-/* .changed{
-    cursor: url('.png'),auto;
-} */
+.team-select-icon.selected{
+    background-color: lightgreen;
+}

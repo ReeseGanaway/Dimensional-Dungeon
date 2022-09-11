@@ -85,6 +85,10 @@ const GrassCanvas = (props) => {
   };
 
   const resetActiveHeroes = () => {
+    for (const [key, value] of Object.entries(activeRoster)) {
+      const teamSelectIcon = document.getElementById(key);
+      teamSelectIcon.className = "";
+    }
     dispatch(rosterActions.resetActiveHeroes());
   };
 
@@ -203,6 +207,11 @@ const GrassCanvas = (props) => {
     setFirstRender(false);
     if (!mode.battle.active) {
       activateTeamSelection();
+
+      for (const [key] of Object.entries(activeRoster)) {
+        const teamSelectIcon = document.getElementById(key);
+        teamSelectIcon.className = "team-select-icon selected";
+      }
     }
     setSelectedHero(null);
 
@@ -283,7 +292,13 @@ const GrassCanvas = (props) => {
     <div className="container-lg">
       <div className="row justify-content-center reset-redux-states">
         <div className="col-md-auto">
-          <button className="btn reset-button" onClick={() => resetRoster()}>
+          <button
+            className="btn reset-button"
+            onClick={() => {
+              resetRoster();
+              setPlayerTeam({});
+            }}
+          >
             Reset Roster
           </button>
         </div>
