@@ -107,7 +107,7 @@ const GrassCanvas = (props) => {
           checkTileForHero(x, y) &&
           checkTileForHero(x, y) !== selectedHero.hero.name
         ) {
-          window.alert("There is already a hero on this tile!");
+          window.alert("There is already a character on this tile!");
         } else if (!checkTeamSelectTile(x, y)) {
           window.alert(
             "Please place your character on one of the tiles highlighted blue!"
