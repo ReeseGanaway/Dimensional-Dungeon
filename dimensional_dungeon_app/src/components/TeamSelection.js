@@ -24,6 +24,10 @@ const TeamSelection = (props) => {
     dispatch(rosterActions.deleteActiveHero(name));
   };
 
+  const updateXY = (newPosition) => {
+    dispatch(rosterActions.updateXY(newPosition));
+  };
+
   const displayHero = () => {
     return Object.keys(collection).map((key) => {
       return (
@@ -44,6 +48,7 @@ const TeamSelection = (props) => {
     //if hero is not currently in active roster
     if (!activeRoster.hasOwnProperty(hero.name)) {
       addHeroActive(hero);
+      updateXY({ name: hero.name, x: null, y: null });
       setSelectedHero(hero);
       canvas.style.cursor = 'url("' + hero.displayIcon + '") 25 15, auto';
       const teamSelectIcon = document.getElementById(hero.name);

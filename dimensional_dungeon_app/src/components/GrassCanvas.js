@@ -385,11 +385,15 @@ const GrassCanvas = (props) => {
                   <div className="row hero-info-sub-row">
                     <div className="col">
                       x:
-                      {selectedHero.x !== null ? selectedHero.x : " N/A"}
+                      {activeRoster[selectedHero.name].x !== null
+                        ? activeRoster[selectedHero.name].x
+                        : " N/A"}
                     </div>
                     <div className="col">
                       y:
-                      {selectedHero.y !== null ? selectedHero.y : " N/A"}
+                      {activeRoster[selectedHero.name].y !== null
+                        ? activeRoster[selectedHero.name].y
+                        : " N/A"}
                     </div>
                   </div>
                 </div>
