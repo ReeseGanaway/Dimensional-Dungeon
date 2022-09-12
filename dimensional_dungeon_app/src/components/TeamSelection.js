@@ -46,7 +46,10 @@ const TeamSelection = (props) => {
   const addToTeam = (hero) => {
     let canvas = document.getElementById("canvas-div");
     //if hero is not currently in active roster
-    if (!activeRoster.hasOwnProperty(hero.name)) {
+    if (
+      !activeRoster.hasOwnProperty(hero.name) &&
+      Object.keys(activeRoster).length < props.heroLimit
+    ) {
       addHeroActive(hero);
       updateXY({ name: hero.name, x: null, y: null });
       setSelectedHero(hero);
@@ -55,7 +58,7 @@ const TeamSelection = (props) => {
       teamSelectIcon.className = "team-select-icon selected";
     }
     //if hero is currently in active roster
-    else {
+    else if (activeRoster.hasOwnProperty(hero.name)) {
       const teamSelectIcon = document.getElementById(hero.name);
       teamSelectIcon.className = "";
       removeActiveHero(hero.name);
@@ -63,8 +66,11 @@ const TeamSelection = (props) => {
         setSelectedHero(null);
       }
       canvas.style.cursor = "";
+    } else {
+      window.alert(
+        "You can't have more than 4 heroes on this map! Please deselect a hero if you wish to add another."
+      );
     }
-
     if (props.playerTeam[hero.name]) {
       delete props.playerTeam[hero.name];
     }

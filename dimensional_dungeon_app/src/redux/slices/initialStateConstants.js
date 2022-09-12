@@ -33,5 +33,13 @@ export const initialRoster = {
       x: 48,
       y: 0,
     },
+    drMultiverse: {
+      name: "drMultiverse",
+      displayName: "Dr. Multiverse (Maya Chamara)(Earth 8)",
+      displayIcon: "/images/drMultiverse/drMultiverseDown2.png",
+      spriteSheet: "/images/drMultiverse/drMultiverseSpriteSheet.png",
+      x: 48,
+      y: 0,
+    },
   },
 };

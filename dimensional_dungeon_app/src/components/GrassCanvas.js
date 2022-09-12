@@ -21,6 +21,7 @@ const GrassCanvas = (props) => {
 
   const [playerTeam, setPlayerTeam] = useState({});
   const [firstRender, setFirstRender] = useState(true);
+  const [heroLimit, setHeroLimit] = useState(4);
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -412,6 +413,7 @@ const GrassCanvas = (props) => {
           <TeamSelection
             playerTeam={playerTeam}
             setPlayerTeam={setPlayerTeam}
+            heroLimit={heroLimit}
           />
         ) : null}
       </div>
