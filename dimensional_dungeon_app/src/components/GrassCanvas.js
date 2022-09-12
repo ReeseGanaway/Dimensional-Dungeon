@@ -13,8 +13,9 @@ const GrassCanvas = (props) => {
   const mode = useSelector((state) => state.mode);
 
   //individual data in states
-  const selectedHero = mode.selectedHero;
+  const selectedHero = mode.selectedHero.hero;
   const activeRoster = roster.activeRoster;
+  const collection = roster.collection;
 
   const dispatch = useDispatch();
 
@@ -102,10 +103,10 @@ const GrassCanvas = (props) => {
     //if user is still in process of choosing team
     if (mode.teamSelection.active) {
       //if user has selected a hero to use, but hasnt placed them on the canvas yet
-      if (selectedHero.hero) {
+      if (selectedHero) {
         if (
           checkTileForHero(x, y) &&
-          checkTileForHero(x, y) !== selectedHero.hero.name
+          checkTileForHero(x, y) !== selectedHero.name
         ) {
           window.alert("There is already a character on this tile!");
         } else if (!checkTeamSelectTile(x, y)) {
@@ -118,7 +119,7 @@ const GrassCanvas = (props) => {
       }
 
       //if user has selected a hero that is already on the canvas, but they want to move it
-      else if (!selectedHero.hero && checkTileForHero(x, y)) {
+      else if (!selectedHero && checkTileForHero(x, y)) {
         const currentHero = checkTileForHero(x, y);
         moveHeroDuringTeamSelect(currentHero);
       }
@@ -197,16 +198,16 @@ const GrassCanvas = (props) => {
   //function for setting character coords when in team selection mode
   function setNewHero(x, y) {
     const newPosition = {
-      name: selectedHero.hero.name,
+      name: selectedHero.name,
       x: x - (x % 48),
       y: y - (y % 48),
     };
     updateXY(newPosition);
     let newTeamSprites = { ...playerTeam };
     let sprite = new Image();
-    sprite.src = selectedHero.hero.spriteSheet;
+    sprite.src = selectedHero.spriteSheet;
 
-    newTeamSprites[selectedHero.hero.name] = sprite;
+    newTeamSprites[selectedHero.name] = sprite;
 
     setPlayerTeam(newTeamSprites);
     setTeamSelectionHero(null);
@@ -219,7 +220,7 @@ const GrassCanvas = (props) => {
   function moveCharacter(x, y) {
     //update redux state (necessary to save player positions on refresh)
     updateXY({
-      name: selectedHero.hero.name,
+      name: selectedHero.name,
       x: x - (x % 48),
       y: y - (y % 48),
     });
@@ -266,7 +267,6 @@ const GrassCanvas = (props) => {
     newCanvas.addEventListener("mousedown", function (e) {
       handleClick.bind(this)(newCanvas, e);
     });
-    //const context = canvas.getContext("2d");
 
     mapImage.onload = () => {
       newCanvas.width = mapImage.width;
@@ -289,8 +289,8 @@ const GrassCanvas = (props) => {
             value.onload = () => {
               context.drawImage(
                 value,
-                48,
-                0,
+                collection[key].x,
+                collection[key].y,
                 48,
                 48,
                 activeRoster[key].x,
@@ -302,8 +302,8 @@ const GrassCanvas = (props) => {
           } else {
             context.drawImage(
               value,
-              48,
-              0,
+              collection[key].x,
+              collection[key].y,
               48,
               48,
               activeRoster[key].x,
@@ -368,14 +368,14 @@ const GrassCanvas = (props) => {
         <div id="canvas-div" className="canvas-div col-md-auto"></div>
         <div id="hero-info" className="hero-info col-4">
           <div className="row">
-            {selectedHero.hero ? (
+            {selectedHero ? (
               <>
                 <div className="row hero-info-row">
                   <div className="col current-hero-display-icon">
-                    <h5>{selectedHero.hero.displayName}</h5>
+                    <h5>{selectedHero.displayName}</h5>
                   </div>
                   <div className="col-md-auto current-hero-display-icon">
-                    <img src={selectedHero.hero.displayIcon} />
+                    <img src={selectedHero.displayIcon} />
                   </div>
                 </div>
                 <div className="row hero-info-row">
@@ -385,32 +385,11 @@ const GrassCanvas = (props) => {
                   <div className="row hero-info-sub-row">
                     <div className="col">
                       x:
-                      {selectedHero.hero.x !== null
-                        ? selectedHero.hero.x
-                        : //playerTeam[selectedHero.hero.name]
-                          //? playerTeam[selectedHero.hero.name].x
-                          //? playerTeam[selectedHero.hero.name].x / 48 + 1
-                          // : " N/A"
-                          // : " N/A"
-                          " N/A"}
+                      {selectedHero.x !== null ? selectedHero.x : " N/A"}
                     </div>
                     <div className="col">
                       y:
-                      {selectedHero.hero.y !== null
-                        ? selectedHero.hero.y
-                        : //playerTeam[selectedHero.hero.name]
-                          //? playerTeam[selectedHero.hero.name].x
-                          //? playerTeam[selectedHero.hero.name].x / 48 + 1
-                          // : " N/A"
-                          // : " N/A"
-                          " N/A"}
-                      {/* {Object.keys(playerTeam).length > 0
-                        ? playerTeam[selectedHero.hero.name]
-                          ? playerTeam[selectedHero.hero.name].y
-                            ? playerTeam[selectedHero.hero.name].y / 48 + 1
-                            : " N/A"
-                          : " N/A"
-                        : " N/A"} */}
+                      {selectedHero.y !== null ? selectedHero.y : " N/A"}
                     </div>
                   </div>
                 </div>
