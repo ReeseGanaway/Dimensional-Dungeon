@@ -8,6 +8,7 @@ export const initialRoster = {
       spriteSheet: "/images/batman/batmanSpriteSheet.png",
       x: 48,
       y: 0,
+      movement: 2,
     },
     robin: {
       name: "robin",
@@ -16,6 +17,7 @@ export const initialRoster = {
       spriteSheet: "/images/robin/robinNightwingSpriteSheet.png",
       x: 48,
       y: 0,
+      movement: 2,
     },
     nightwing: {
       name: "nightwing",
@@ -24,6 +26,7 @@ export const initialRoster = {
       spriteSheet: "/images/robin/robinNightwingSpriteSheet.png",
       x: 192,
       y: 0,
+      movement: 3,
     },
     superman: {
       name: "superman",
@@ -32,6 +35,7 @@ export const initialRoster = {
       spriteSheet: "/images/superman/supermanSpriteSheet.png",
       x: 48,
       y: 0,
+      movement: 2,
     },
     drMultiverse: {
       name: "drMultiverse",
@@ -40,6 +44,7 @@ export const initialRoster = {
       spriteSheet: "/images/drMultiverse/drMultiverseSpriteSheet.png",
       x: 48,
       y: 0,
+      movement: 2,
     },
   },
 };

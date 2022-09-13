@@ -1,7 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initMode = {
-  movement: { active: false, currentHero: null },
+  movement: {
+    active: false,
+    openSet: null,
+    closedSet: [],
+    destination: { x: null, y: null },
+  },
   battle: { active: false, currentHero: null },
   teamSelection: { active: false, currentHero: null },
   selectedHero: { hero: null },
@@ -10,9 +15,6 @@ export const mode = createSlice({
   name: "mode",
   initialState: initMode,
   reducers: {
-    toggleMovement(state, action) {
-      return { ...state, movement: action.payload };
-    },
     setSelectedHero(state, action) {
       return {
         ...state,
@@ -22,11 +24,41 @@ export const mode = createSlice({
         },
       };
     },
+    activateMovement(state) {
+      return {
+        ...state,
+        movement: { ...state.movement, active: true },
+      };
+    },
     endMovement(state) {
       return {
         ...state,
-        movement: { ...state.movement, active: false, currentHero: null },
+        movement: { ...state.movement, active: false },
         selectedHero: { ...state.selectedHero, hero: null },
+      };
+    },
+    setOpenSet(state, action) {
+      return {
+        ...state,
+        movement: { ...state.movement, openSet: action.payload },
+      };
+    },
+    clearOpenSet(state) {
+      return { ...state, movement: { ...state.movement, openSet: null } };
+    },
+    setDestination(state, action) {
+      return {
+        ...state,
+        movement: {
+          ...state.movement,
+          destination: { x: action.payload.x, y: action.payload.y },
+        },
+      };
+    },
+    clearDestination(state) {
+      return {
+        ...state,
+        movement: { ...state.movement, destination: { x: null, y: null } },
       };
     },
     activateTeamSelection(state) {
@@ -35,6 +67,7 @@ export const mode = createSlice({
         teamSelection: { ...state.teamSelection, active: true },
       };
     },
+
     deactivateTeamSelection(state) {
       return {
         ...state,
