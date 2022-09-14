@@ -1,7 +1,11 @@
-import React from "react";
-import { modeActions } from "../redux/slices/mode";
+function Astar(rows, cols, startX, startY, movement, destination, canvas) {
+  console.clear();
+  let newDest = {
+    x: (destination.x - (destination.x % 48)) / 48,
+    y: (destination.y - (destination.y % 48)) / 48,
+  };
+  destination = { ...destination, ...newDest };
 
-function Astar(rows, cols, startX, startY, destination, canvas) {
   function removeFromArray(arr, elem) {
     for (let i = arr.length - 1; i >= 0; i--) {
       if (arr[i] == elem) {
@@ -35,6 +39,7 @@ function Astar(rows, cols, startX, startY, destination, canvas) {
 
     this.show = function (color) {
       //canvas.rect(this.x * 48, this.y * 48, 48, 48);
+      console.log(this.i, this.j);
       canvas.fillStyle = color;
       canvas.fillRect(this.i * 48, this.j * 48, 48, 48);
 
@@ -75,10 +80,8 @@ function Astar(rows, cols, startX, startY, destination, canvas) {
     }
   }
 
-  console.log(grid);
-
   start = grid[startX][startY];
-  console.log(destination);
+
   end = grid[destination.x][destination.y];
 
   openSet.push(start);
@@ -95,7 +98,7 @@ function Astar(rows, cols, startX, startY, destination, canvas) {
       var current = openSet[winner];
 
       if (current === end) {
-        console.log("DONE");
+        //console.log("DONE");
       }
 
       removeFromArray(openSet, current);
@@ -127,19 +130,12 @@ function Astar(rows, cols, startX, startY, destination, canvas) {
     }
   }
 
-  // for (let i = 0; i<cols; i++ ){
-  //     for (let j = 0 ; j <rows; j++){
-  //         grid[i][j].show();
-  //     }
+  // for (let i = 0; i < closedSet.length; i++) {
+  //   closedSet[i].show("rgb(255, 0, 0, .3)");
   // }
-
-  for (let i = 0; i < closedSet.length; i++) {
-    console.log(closedSet);
-    closedSet[i].show("rgb(255, 0, 0, .3)");
-  }
-  for (let i = 0; i < openSet.length; i++) {
-    openSet[i].show("rgb(0, 255, 0, .3)");
-  }
+  // for (let i = 0; i < openSet.length; i++) {
+  //   openSet[i].show("rgb(0, 255, 0, .3)");
+  // }
 
   path = [];
   let temp = current;
@@ -148,9 +144,18 @@ function Astar(rows, cols, startX, startY, destination, canvas) {
     path.push(temp.previous);
     temp = temp.previous;
   }
+  //console.log(path[0].i, path);
 
   for (let i = 0; i < path.length; i++) {
-    path[i].show("rgb(0, 0, 255, 0.3)");
+    if (
+      i >= 1 &&
+      Math.abs(path[path.length - 1].i - destination.x) +
+        Math.abs(path[path.length - 1].j - destination.y) <=
+        movement
+    ) {
+      console.log(path[i]);
+      path[i - 1].show("rgb(0, 0, 255, 0.3)");
+    }
   }
 
   return openSet;

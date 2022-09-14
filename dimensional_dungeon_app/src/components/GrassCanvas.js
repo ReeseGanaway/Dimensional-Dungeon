@@ -7,6 +7,7 @@ import TeamSelection from "./TeamSelection";
 import astar from "./astar";
 import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
+import { debounce } from "lodash";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
@@ -243,16 +244,7 @@ const GrassCanvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
-    setDestination({ x: (x - (x % 48)) / 48, y: (y - (y % 48)) / 48 });
-
-    // astar(
-    //   10,
-    //   10,
-    //   selectedHero.x / 48,
-    //   selectedHero.y / 48,
-    //   { x: (x - (x % 48)) / 48, y: (y - (y % 48)) / 48 },
-    //   canvasRef.current.getContext("2d")
-    // );
+    setDestination({ x: x, y: y });
 
     //update redux state (necessary to save player positions on refresh)
 
@@ -266,7 +258,23 @@ const GrassCanvas = (props) => {
     //turn off movement mode
     endMovement();
     setSelectedHero(null);
+    //canvas.removeEventListener("mousemove", timeOutMouseStopped);
   }
+
+  const debounceDrawPath = debounce(async (e) => {
+    let rect = canvas.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+    setDestination({ x: x, y: y });
+  }, 5);
+
+  async function drawPath(e) {
+    debounceDrawPath(e);
+  }
+
+  // function setHeroDirection(x, y){
+  //   if(x)
+  // }
 
   //only first render
   useEffect(() => {
@@ -331,6 +339,34 @@ const GrassCanvas = (props) => {
         }
       }
 
+      if (mode.movement.active) {
+        // console.log(
+        //   //destination,
+        //   //selectedHero,
+
+        //   (Math.abs(selectedHero.x + 48 - destination.x) +
+        //     Math.abs(selectedHero.y + 48 - destination.y)) /
+        //     48
+        // );
+        // if (
+        //   Math.abs(selectedHero.x - destination.x) / 48 +
+        //     Math.abs(selectedHero.y - destination.y) / 48 -
+        //     1 <=
+        //   selectedHero.movement
+        // ) {
+        astar(
+          10,
+          10,
+          selectedHero.x / 48,
+          selectedHero.y / 48,
+          selectedHero.movement,
+          destination,
+
+          canvasRef.current.getContext("2d")
+        );
+        //}
+      }
+
       if (Object.keys(playerTeam).length > 0) {
         for (const [key, value] of Object.entries(playerTeam)) {
           if (!value.complete) {
@@ -363,7 +399,15 @@ const GrassCanvas = (props) => {
         }
       }
     };
-  }, [roster, playerTeam, mapImage, mode.teamSelection.active]);
+  }, [roster, playerTeam, mapImage, mode.teamSelection.active, destination]);
+
+  // useEffect(() => {
+  //   if (mode.movement.active) {
+  //     // if (canvas) {
+  //     //   canvas.addEventListener("mousemove", timeOutMouseStopped);
+  //     // }
+  //   }
+  // }, [mode.movement.active]);
 
   return (
     <div className="container-lg">
@@ -413,6 +457,11 @@ const GrassCanvas = (props) => {
             id="canvas"
             ref={canvasRef}
             onClick={(e) => handleClick.bind(this)(canvas, e)}
+            onMouseMove={(e) => {
+              if (mode.movement.active) {
+                drawPath(e);
+              }
+            }}
           ></canvas>
         </div>
         <div id="hero-info" className="hero-info col-4">
