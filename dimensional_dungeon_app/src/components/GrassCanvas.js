@@ -150,7 +150,17 @@ const GrassCanvas = (props) => {
         ) {
           moveCharacter(x, y);
         } else {
-          window.alert("There is already a character in this tile!");
+          let key = checkTileForHero(x, y, activeRoster);
+          setSelectedHero(activeRoster[key]);
+          setOpenSet(
+            tilesInMoveRange(
+              activeRoster[key].x,
+              activeRoster[key].y,
+              10,
+              10,
+              activeRoster[key].movement
+            )
+          );
         }
       }
       //if we arent in movement mode...
