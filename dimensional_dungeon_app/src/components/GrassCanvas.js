@@ -9,6 +9,7 @@ import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
 
 const GrassCanvas = (props) => {
+  console.log("hello");
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
 
