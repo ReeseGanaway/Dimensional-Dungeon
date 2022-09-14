@@ -9,7 +9,6 @@ import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
 
 const GrassCanvas = (props) => {
-  console.log("hello");
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
 
@@ -145,7 +144,10 @@ const GrassCanvas = (props) => {
     } else if (mode.battle.active) {
       //movement mode is active (last click was a click on an ally character)
       if (mode.movement.active) {
-        if (!checkTileForHero(x, y, activeRoster)) {
+        if (
+          !checkTileForHero(x, y, activeRoster) ||
+          checkTileForHero(x, y, activeRoster) === selectedHero.name
+        ) {
           moveCharacter(x, y);
         } else {
           window.alert("There is already a character in this tile!");
@@ -203,7 +205,7 @@ const GrassCanvas = (props) => {
     const tempHero = { ...activeRoster[name] };
     setSelectedHero(tempHero);
     delete playerTeam[name];
-    console.log(playerTeam);
+
     let canvasDiv = document.getElementById("canvas-div");
     canvasDiv.style.cursor = 'url("' + tempHero.displayIcon + '") 25 15, auto';
   }
