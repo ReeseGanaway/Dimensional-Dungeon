@@ -96,6 +96,9 @@ const GrassCanvas = (props) => {
   };
 
   const setSelectedHero = (hero) => {
+    if (hero == null) {
+      setOpenSet(null);
+    }
     //we can reset the destination
     //because there should never be a destination if a new hero is selected
     setDestination({ x: null, y: null });
@@ -156,10 +159,7 @@ const GrassCanvas = (props) => {
     } else if (mode.battle.active) {
       //movement mode is active (last click was a click on an ally character)
       if (mode.movement.active) {
-        if (
-          !checkTileForHero(x, y, activeRoster) ||
-          checkTileForHero(x, y, activeRoster) === selectedHero.name
-        ) {
+        if (!checkTileForHero(x, y, activeRoster)) {
           if (
             manhattanDist(
               selectedHero.x,
@@ -170,7 +170,13 @@ const GrassCanvas = (props) => {
             )
           ) {
             moveCharacter(x, y);
+          } else {
+            setSelectedHero(null);
+            endMovement();
           }
+        } else if (checkTileForHero(x, y, activeRoster) === selectedHero.name) {
+          endMovement();
+          setSelectedHero(null);
         } else {
           let key = checkTileForHero(x, y, activeRoster);
           setSelectedHero(activeRoster[key]);
