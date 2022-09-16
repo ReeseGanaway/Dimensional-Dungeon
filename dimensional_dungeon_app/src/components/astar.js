@@ -1,5 +1,4 @@
 function Astar(rows, cols, startX, startY, movement, destination, canvas) {
-  console.clear();
   let newDest = {
     x: (destination.x - (destination.x % 48)) / 48,
     y: (destination.y - (destination.y % 48)) / 48,
@@ -20,11 +19,94 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
     return d;
   }
 
+  ///////////////////////////////////////////////  ///////////////////////////////////////////////
+
+  //   var bez1 = {
+  //     sx: 22,
+  //     sy: 0,
+  //     cx1: 22,
+  //     cy1: 22,
+  //     cx2: 22,
+  //     cy2: 22,
+  //     ex: 48,
+  //     ey: 22
+  // };
+
+  // drawCurvedArrow(bez1);
+
+  // function drawCurvedArrow(bez) {
+
+  //     // calculate the ending angle of the curve
+
+  //     var pointNearEnd = getCubicBezierXYatT({
+  //         x: bez.sx,
+  //         y: bez.sy
+  //     }, {
+  //         x: bez.cx1,
+  //         y: bez.cy1
+  //     }, {
+  //         x: bez.cx2,
+  //         y: bez.cy2
+  //     }, {
+  //         x: bez.ex,
+  //         y: bez.ey
+  //     }, 0.99);
+  //     var dx = bez.ex - pointNearEnd.x;
+  //     var dy = bez.ey - pointNearEnd.y;
+  //     var endingAngle = Math.atan2(dy, dx);
+
+  //     // draw the arrow shaft
+
+  //     ctx.moveTo(bez.sx, bez.sy);
+  //     ctx.bezierCurveTo(bez.cx1, bez.cy1, bez.cx2, bez.cy2, bez.ex, bez.ey);
+  //     ctx.lineWidth = 10;
+  //     ctx.stroke();
+
+  //     // draw the arrow head
+
+  //     var size = ctx.lineWidth/1.5;
+
+  //     ctx.beginPath();
+  //     ctx.save();
+  //     ctx.translate(bez.ex, bez.ey);
+  //     ctx.rotate(endingAngle);
+  //     ctx.moveTo(0, 0);
+  //     ctx.lineTo(0, -size * 2);
+  //     ctx.lineTo(size * 3, 0);
+  //     ctx.lineTo(0, size * 2);
+  //     ctx.lineTo(0, 0);
+  //     ctx.closePath();
+  //     ctx.fill();
+  //     ctx.restore();
+
+  // }
+
+  // // helper functions
+
+  // function getCubicBezierXYatT(startPt, controlPt1, controlPt2, endPt, T) {
+  //     var x = CubicN(T, startPt.x, controlPt1.x, controlPt2.x, endPt.x);
+  //     var y = CubicN(T, startPt.y, controlPt1.y, controlPt2.y, endPt.y);
+  //     return ({
+  //         x: x,
+  //         y: y
+  //     });
+  // }
+
+  // // cubic helper formula at T distance
+  // function CubicN(T, a, b, c, d) {
+  //     var t2 = T * T;
+  //     var t3 = t2 * T;
+  //     return a + (-a * 3 + T * (3 * a - a * T)) * T + (3 * b + T * (-6 * b + b * 3 * T)) * T + (c * 3 - c * 3 * T) * t2 + d * t3;
+  // }
+
+  ///////////////////////////////////////////////  ///////////////////////////////////////////////
+
   let grid = new Array(cols);
 
   let openSet = [];
   let closedSet = [];
   let path = [];
+  let objectPath = {};
   let start;
   let end;
 
@@ -37,13 +119,11 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
     this.neighbors = [];
     this.previous = null;
 
-    this.show = function (color) {
+    this.show = function (color, index) {
       //canvas.rect(this.x * 48, this.y * 48, 48, 48);
-      console.log(this.i, this.j);
+      //console.log(this.i, this.j);
       canvas.fillStyle = color;
       canvas.fillRect(this.i * 48, this.j * 48, 48, 48);
-
-      //console.log(this.i * 48, this.j * 48);
     };
 
     this.addNeighbors = function (grid) {
@@ -126,7 +206,6 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
       }
     } else {
       //no solution
-      console("no sol");
     }
   }
 
@@ -138,13 +217,29 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
   // }
 
   path = [];
+
   let temp = current;
   path.push(temp);
-  while (temp.previous) {
+  objectPath = {
+    ...objectPath,
+    [[`${temp.i * 48},${temp.j * 48}`]]: { x: temp.i * 48, y: temp.j * 48 },
+  };
+  while (
+    temp.previous &&
+    Math.abs(start.i - destination.x) + Math.abs(start.j - destination.y) <=
+      movement
+  ) {
     path.push(temp.previous);
+    objectPath = {
+      ...objectPath,
+      [`${temp.previous.i * 48},${temp.previous.j * 48}`]: {
+        x: temp.previous.i * 48,
+        y: temp.previous.j * 48,
+      },
+    };
+
     temp = temp.previous;
   }
-  //console.log(path[0].i, path);
 
   for (let i = 0; i < path.length; i++) {
     if (
@@ -153,12 +248,11 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
         Math.abs(path[path.length - 1].j - destination.y) <=
         movement
     ) {
-      console.log(path[i]);
-      path[i - 1].show("rgb(0, 0, 255, 0.3)");
+      //path[i - 1].show("rgb(255, 255, 255, 0.7)", i - 1);
     }
   }
 
-  return openSet;
+  return objectPath;
 }
 
 export default Astar;

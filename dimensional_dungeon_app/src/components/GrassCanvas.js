@@ -8,10 +8,13 @@ import astar from "./astar";
 import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
 import { debounce } from "lodash";
+import { current } from "@reduxjs/toolkit";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
+  let direction;
+  let path;
 
   //redux state variables
 
@@ -92,6 +95,9 @@ const GrassCanvas = (props) => {
   };
 
   const setSelectedHero = (hero) => {
+    //we can reset the destination
+    //because there should never be a destination if a new hero is selected
+    setDestination({ x: null, y: null });
     dispatch(modeActions.setSelectedHero(hero));
   };
 
@@ -111,6 +117,10 @@ const GrassCanvas = (props) => {
 
   const setOpenSet = (openSet) => {
     dispatch(modeActions.setOpenSet(openSet));
+  };
+
+  const setPath = (path) => {
+    dispatch(modeActions.setPath(path));
   };
 
   //function to determine and handle what should be happening when the canvas is clicked
@@ -258,7 +268,18 @@ const GrassCanvas = (props) => {
     //turn off movement mode
     endMovement();
     setSelectedHero(null);
-    //canvas.removeEventListener("mousemove", timeOutMouseStopped);
+  }
+
+  function getDirection(prev, curr) {
+    if (curr.x > prev.x) {
+      return "right";
+    } else if (curr.x < prev.x) {
+      return "left";
+    } else if (curr.y > prev.y) {
+      return "down";
+    } else if (curr.y < prev.y) {
+      return "up";
+    }
   }
 
   const debounceDrawPath = debounce(async (e) => {
@@ -272,9 +293,61 @@ const GrassCanvas = (props) => {
     debounceDrawPath(e);
   }
 
-  // function setHeroDirection(x, y){
-  //   if(x)
-  // }
+  function drawCurvedArrow(
+    sx,
+    sy,
+    cx1,
+    cy1,
+    cx2,
+    cy2,
+    ex,
+    ey,
+    last,
+    newDirection
+  ) {
+    // pathArray, index) {
+    let context = canvasRef.current.getContext("2d");
+
+    context.lineWidth = 10;
+    if (!last) {
+      // draw the arrow shaft
+      context.moveTo(sx, sy);
+      context.bezierCurveTo(cx1, cy1, cx2, cy2, ex, ey);
+      context.stroke();
+    }
+    // draw the arrow head
+    else {
+      var size = context.lineWidth / 1.5;
+
+      context.beginPath();
+      context.save();
+      if (newDirection === "right") {
+        context.translate(sx + 48, sy + 24);
+      } else if (newDirection === "left") {
+        context.translate(sx, sy + 24);
+        context.rotate((180 * Math.PI) / 180);
+      } else if (newDirection === "up") {
+        context.translate(sx + 24, sy);
+        context.rotate((270 * Math.PI) / 180);
+      } else if (newDirection === "down") {
+        context.translate(sx + 24, sy + 48);
+        context.rotate((90 * Math.PI) / 180);
+      }
+
+      context.fillStyle = "black";
+      context.moveTo(0, 0);
+      context.lineTo(10, 0);
+      context.stroke();
+      context.lineTo(10, -size * 2);
+      context.lineTo(size * 3 + 10, 0);
+      context.lineTo(10, size * 2);
+      context.lineTo(10, 0);
+      context.lineTo(0, 0);
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+  }
 
   //only first render
   useEffect(() => {
@@ -323,6 +396,8 @@ const GrassCanvas = (props) => {
         }
       }
 
+      //if a character was selected and there is a set of open tiles,
+      //draw the tiles they can move to
       if (openSet) {
         for (const [key, value] of Object.entries(openSet)) {
           if (
@@ -339,32 +414,202 @@ const GrassCanvas = (props) => {
         }
       }
 
+      //if movement mode is active
       if (mode.movement.active) {
-        // console.log(
-        //   //destination,
-        //   //selectedHero,
+        if (destination.x && destination.y) {
+          //get the path the character would take to get to the destination
+          path = astar(
+            10,
+            10,
+            selectedHero.x / 48,
+            selectedHero.y / 48,
+            selectedHero.movement,
+            destination,
+            canvasRef.current.getContext("2d")
+          );
 
-        //   (Math.abs(selectedHero.x + 48 - destination.x) +
-        //     Math.abs(selectedHero.y + 48 - destination.y)) /
-        //     48
-        // );
-        // if (
-        //   Math.abs(selectedHero.x - destination.x) / 48 +
-        //     Math.abs(selectedHero.y - destination.y) / 48 -
-        //     1 <=
-        //   selectedHero.movement
-        // ) {
-        astar(
-          10,
-          10,
-          selectedHero.x / 48,
-          selectedHero.y / 48,
-          selectedHero.movement,
-          destination,
+          let pathArray = Object.entries(path).reverse();
 
-          canvasRef.current.getContext("2d")
-        );
-        //}
+          let sx, sy, ex, ey, last, newDirection, prevDirection;
+
+          //loop through the path to draw arrows
+          //showing user where the character will move
+          for (let i = 0; i < pathArray.length; i++) {
+            //since starting tile (tile character is on) arrow should not be drawn,
+            //check and make sure there is more than one tile
+            if (pathArray.length > 1) {
+              //if we are on the last tile of the path
+              if (i === pathArray.length - 1) {
+                //check directions to see if a curve needs to be drawn
+                if (direction === newDirection) {
+                  if (prevDirection == "up" && direction == "right") {
+                    sx += 24;
+                    sy = ey;
+                    prevDirection = null;
+                  } else if (prevDirection == "up" && direction == "left") {
+                    sx -= 24;
+                    sy = ey;
+                    prevDirection = null;
+                  }
+                  if (prevDirection == "down" && direction == "right") {
+                    sx += 24;
+                    sy = ey;
+                    prevDirection = null;
+                  } else if (prevDirection == "down" && direction == "left") {
+                    sx -= 24;
+                    sy = ey;
+                    prevDirection = null;
+                  }
+
+                  //draw a curve
+                  drawCurvedArrow(
+                    sx,
+                    sy,
+                    sx - (sx - ex) / 2,
+                    sy - (sy - ey) / 2,
+                    sx - (sx - ex) / 2,
+                    sy - (sy - ey) / 2,
+                    ex,
+                    ey,
+                    last,
+                    newDirection
+                  );
+                }
+                //adjust and draw arrow head
+
+                sx = pathArray[i - 1][1].x;
+                sy = pathArray[i - 1][1].y;
+                ex = pathArray[i][1].x;
+                ey = pathArray[i][1].y;
+                last = true;
+                drawCurvedArrow(
+                  sx,
+                  sy,
+                  sx - (sx - ex) / 2,
+                  sy - (sy - ey) / 2,
+                  sx - (sx - ex) / 2,
+                  sy - (sy - ey) / 2,
+                  ex,
+                  ey,
+                  last,
+                  newDirection
+                );
+              }
+              //if not on the last tile of path
+              else {
+                last = false;
+                newDirection = getDirection(
+                  pathArray[i][1],
+                  pathArray[i + 1][1]
+                );
+                if (!direction) {
+                  direction = newDirection;
+                }
+                //if we are on the first tile of the path
+                if (i === 0) {
+                  switch (direction) {
+                    case "up":
+                      sx = pathArray[i][1].x + 24;
+                      sy = pathArray[i][1].y;
+                      break;
+                    case "down":
+                      sx = pathArray[i][1].x + 24;
+                      sy = pathArray[i][1].y + 48;
+                      break;
+                    case "right":
+                      sx = pathArray[i][1].x + 48;
+                      sy = pathArray[i][1].y + 24;
+                      break;
+                    case "left":
+                      sx = pathArray[i][1].x;
+                      sy = pathArray[i][1].y + 24;
+                      break;
+                  }
+                }
+                //if the direction we are moving in has not changed from the last movement
+                //adjust how far we are moving before we need to draw the first portion of arrow
+                if (direction === newDirection) {
+                  switch (direction) {
+                    case "up":
+                      ex = pathArray[i][1].x + 24;
+                      ey = pathArray[i][1].y;
+
+                      break;
+                    case "down":
+                      ex = pathArray[i + 1][1].x + 24;
+                      ey = pathArray[i + 1][1].y;
+                      break;
+                    case "right":
+                      ex = pathArray[i][1].x + 48;
+                      ey = pathArray[i][1].y + 24;
+                      break;
+                    case "left":
+                      ex = pathArray[i + 1][1].x + 48;
+                      ey = pathArray[i + 1][1].y + 24;
+                      break;
+                  }
+                }
+                //if the direction has changed, draw the straight shaft of the arrow
+                //and depending on direction, draw a curve that leads into the arrow head
+                //may need to be adjusted when adding obstacles/tiles that cannot be moved through,
+                //as right now curves will only occur to the right or to the left after moving up or down
+                if (direction !== newDirection) {
+                  switch (newDirection) {
+                    case "up":
+                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
+
+                      break;
+                    case "down":
+                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
+                      break;
+                    case "right":
+                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
+                      sx = ex;
+                      sy = ey;
+                      if (direction === "down") {
+                        ex += 24;
+                        ey += 24;
+                      } else if (direction === "up") {
+                        ex += 24;
+                        ey -= 24;
+                      }
+
+                      drawCurvedArrow(sx, sy, sx, ey, sx, ey, ex, ey, last);
+                      prevDirection = direction;
+                      direction = null;
+                      break;
+                    case "left":
+                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
+                      sx = ex;
+                      sy = ey;
+                      if (direction === "down") {
+                        ex -= 24;
+                        ey += 24;
+                      } else if (direction === "up") {
+                        ex -= 24;
+                        ey -= 24;
+                      }
+
+                      drawCurvedArrow(
+                        sx,
+                        sy,
+                        ex + (sx - ex),
+                        ey,
+                        ex + (sx - ex),
+                        ey,
+                        ex,
+                        ey,
+                        last
+                      );
+                      prevDirection = direction;
+                      direction = null;
+                      break;
+                  }
+                }
+              }
+            }
+          }
+        }
       }
 
       if (Object.keys(playerTeam).length > 0) {
@@ -399,15 +644,7 @@ const GrassCanvas = (props) => {
         }
       }
     };
-  }, [roster, playerTeam, mapImage, mode.teamSelection.active, destination]);
-
-  // useEffect(() => {
-  //   if (mode.movement.active) {
-  //     // if (canvas) {
-  //     //   canvas.addEventListener("mousemove", timeOutMouseStopped);
-  //     // }
-  //   }
-  // }, [mode.movement.active]);
+  }, [mapImage, mode.teamSelection.active]);
 
   return (
     <div className="container-lg">

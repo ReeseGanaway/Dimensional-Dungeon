@@ -4,6 +4,7 @@ const initMode = {
   movement: {
     active: false,
     openSet: null,
+    path: null,
     closedSet: [],
     destination: { x: null, y: null },
   },
@@ -43,8 +44,11 @@ export const mode = createSlice({
         movement: { ...state.movement, openSet: action.payload },
       };
     },
-    clearOpenSet(state) {
-      return { ...state, movement: { ...state.movement, openSet: null } };
+    setPath(state, action) {
+      return {
+        ...state,
+        movement: { ...state.movement, path: action.payload },
+      };
     },
     setDestination(state, action) {
       return {
