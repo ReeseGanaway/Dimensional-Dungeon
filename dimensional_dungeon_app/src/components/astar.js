@@ -1,3 +1,5 @@
+import { manhattanDist } from "../functions/manhattanDist";
+
 function Astar(rows, cols, startX, startY, movement, destination, canvas) {
   let newDest = {
     x: (destination.x - (destination.x % 48)) / 48,
@@ -14,92 +16,9 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
   }
 
   function heuristic(a, b) {
-    //let d = Math.sqrt(Math.pow(a.i - a.j, 2) + Math.pow(b.i - b.j, 2));
     let d = Math.abs(a.i - b.i) + Math.abs(a.j - b.j);
     return d;
   }
-
-  ///////////////////////////////////////////////  ///////////////////////////////////////////////
-
-  //   var bez1 = {
-  //     sx: 22,
-  //     sy: 0,
-  //     cx1: 22,
-  //     cy1: 22,
-  //     cx2: 22,
-  //     cy2: 22,
-  //     ex: 48,
-  //     ey: 22
-  // };
-
-  // drawCurvedArrow(bez1);
-
-  // function drawCurvedArrow(bez) {
-
-  //     // calculate the ending angle of the curve
-
-  //     var pointNearEnd = getCubicBezierXYatT({
-  //         x: bez.sx,
-  //         y: bez.sy
-  //     }, {
-  //         x: bez.cx1,
-  //         y: bez.cy1
-  //     }, {
-  //         x: bez.cx2,
-  //         y: bez.cy2
-  //     }, {
-  //         x: bez.ex,
-  //         y: bez.ey
-  //     }, 0.99);
-  //     var dx = bez.ex - pointNearEnd.x;
-  //     var dy = bez.ey - pointNearEnd.y;
-  //     var endingAngle = Math.atan2(dy, dx);
-
-  //     // draw the arrow shaft
-
-  //     ctx.moveTo(bez.sx, bez.sy);
-  //     ctx.bezierCurveTo(bez.cx1, bez.cy1, bez.cx2, bez.cy2, bez.ex, bez.ey);
-  //     ctx.lineWidth = 10;
-  //     ctx.stroke();
-
-  //     // draw the arrow head
-
-  //     var size = ctx.lineWidth/1.5;
-
-  //     ctx.beginPath();
-  //     ctx.save();
-  //     ctx.translate(bez.ex, bez.ey);
-  //     ctx.rotate(endingAngle);
-  //     ctx.moveTo(0, 0);
-  //     ctx.lineTo(0, -size * 2);
-  //     ctx.lineTo(size * 3, 0);
-  //     ctx.lineTo(0, size * 2);
-  //     ctx.lineTo(0, 0);
-  //     ctx.closePath();
-  //     ctx.fill();
-  //     ctx.restore();
-
-  // }
-
-  // // helper functions
-
-  // function getCubicBezierXYatT(startPt, controlPt1, controlPt2, endPt, T) {
-  //     var x = CubicN(T, startPt.x, controlPt1.x, controlPt2.x, endPt.x);
-  //     var y = CubicN(T, startPt.y, controlPt1.y, controlPt2.y, endPt.y);
-  //     return ({
-  //         x: x,
-  //         y: y
-  //     });
-  // }
-
-  // // cubic helper formula at T distance
-  // function CubicN(T, a, b, c, d) {
-  //     var t2 = T * T;
-  //     var t3 = t2 * T;
-  //     return a + (-a * 3 + T * (3 * a - a * T)) * T + (3 * b + T * (-6 * b + b * 3 * T)) * T + (c * 3 - c * 3 * T) * t2 + d * t3;
-  // }
-
-  ///////////////////////////////////////////////  ///////////////////////////////////////////////
 
   let grid = new Array(cols);
 
@@ -118,13 +37,6 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
     this.h = 0;
     this.neighbors = [];
     this.previous = null;
-
-    this.show = function (color, index) {
-      //canvas.rect(this.x * 48, this.y * 48, 48, 48);
-      //console.log(this.i, this.j);
-      canvas.fillStyle = color;
-      canvas.fillRect(this.i * 48, this.j * 48, 48, 48);
-    };
 
     this.addNeighbors = function (grid) {
       let i = this.i;
@@ -166,6 +78,7 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
 
   openSet.push(start);
 
+  //while we havent reacted our destination
   while (current !== end) {
     if (openSet.length > 0) {
       //keep going
@@ -178,7 +91,6 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
       var current = openSet[winner];
 
       if (current === end) {
-        //console.log("DONE");
       }
 
       removeFromArray(openSet, current);
@@ -209,25 +121,19 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
     }
   }
 
-  // for (let i = 0; i < closedSet.length; i++) {
-  //   closedSet[i].show("rgb(255, 0, 0, .3)");
-  // }
-  // for (let i = 0; i < openSet.length; i++) {
-  //   openSet[i].show("rgb(0, 255, 0, .3)");
-  // }
-
+  //create the path that we will return to main canvas component
   path = [];
-
   let temp = current;
   path.push(temp);
   objectPath = {
     ...objectPath,
     [[`${temp.i * 48},${temp.j * 48}`]]: { x: temp.i * 48, y: temp.j * 48 },
   };
+  //while there are still tiles to be added
+  //and the destination is within character's range
   while (
     temp.previous &&
-    Math.abs(start.i - destination.x) + Math.abs(start.j - destination.y) <=
-      movement
+    manhattanDist(start.i, start.j, destination.x, destination.y, movement)
   ) {
     path.push(temp.previous);
     objectPath = {
@@ -237,19 +143,7 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
         y: temp.previous.j * 48,
       },
     };
-
     temp = temp.previous;
-  }
-
-  for (let i = 0; i < path.length; i++) {
-    if (
-      i >= 1 &&
-      Math.abs(path[path.length - 1].i - destination.x) +
-        Math.abs(path[path.length - 1].j - destination.y) <=
-        movement
-    ) {
-      //path[i - 1].show("rgb(255, 255, 255, 0.7)", i - 1);
-    }
   }
 
   return objectPath;

@@ -9,6 +9,7 @@ import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
 import { debounce } from "lodash";
 import { current } from "@reduxjs/toolkit";
+import { manhattanDist } from "../functions/manhattanDist";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
@@ -159,7 +160,17 @@ const GrassCanvas = (props) => {
           !checkTileForHero(x, y, activeRoster) ||
           checkTileForHero(x, y, activeRoster) === selectedHero.name
         ) {
-          moveCharacter(x, y);
+          if (
+            manhattanDist(
+              selectedHero.x,
+              selectedHero.y,
+              destination.x,
+              destination.y,
+              selectedHero.movement
+            )
+          ) {
+            moveCharacter(x, y);
+          }
         } else {
           let key = checkTileForHero(x, y, activeRoster);
           setSelectedHero(activeRoster[key]);
