@@ -131,7 +131,6 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
   };
   //while there are still tiles to be added
   //and the destination is within character's range
-  console.log(startX, startY);
   while (
     temp.previous &&
     manhattanDist(
