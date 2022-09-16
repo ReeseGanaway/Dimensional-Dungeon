@@ -131,9 +131,16 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
   };
   //while there are still tiles to be added
   //and the destination is within character's range
+  console.log(startX, startY);
   while (
     temp.previous &&
-    manhattanDist(start.i, start.j, destination.x, destination.y, movement)
+    manhattanDist(
+      startX * 48,
+      startY * 48,
+      destination.x * 48,
+      destination.y * 48,
+      movement
+    )
   ) {
     path.push(temp.previous);
     objectPath = {
