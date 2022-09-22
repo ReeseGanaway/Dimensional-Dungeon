@@ -7,7 +7,7 @@ import TeamSelection from "./TeamSelection";
 import astar from "./astar";
 import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
-import { debounce } from "lodash";
+import { debounce, times } from "lodash";
 import { current } from "@reduxjs/toolkit";
 import { manhattanDist } from "../functions/manhattanDist";
 
@@ -27,6 +27,7 @@ const GrassCanvas = (props) => {
   const selectedHero = mode.selectedHero.hero;
   const destination = mode.movement.destination;
   const openSet = mode.movement.openSet;
+  const reduxPath = mode.movement.path;
   const activeRoster = roster.activeRoster;
   const collection = roster.collection;
 
@@ -35,6 +36,8 @@ const GrassCanvas = (props) => {
   const [playerTeam, setPlayerTeam] = useState({});
   const [firstRender, setFirstRender] = useState(true);
   const [heroLimit, setHeroLimit] = useState(4);
+  const [stepCount, setStepCount] = useState(0);
+  const [pathState, setPathState] = useState([]);
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -263,6 +266,7 @@ const GrassCanvas = (props) => {
     newTeamSprites[selectedHero.name] = sprite;
 
     setPlayerTeam(newTeamSprites);
+
     setTeamSelectionHero(null);
     let canvasDiv = document.getElementById("canvas-div");
     canvasDiv.style.cursor = "";
@@ -271,6 +275,12 @@ const GrassCanvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
+    // if (path) {
+    //   console.log(Object.entries(path).reverse());
+    //   setPath(Object.entries(path).reverse());
+    //   simulateMovement(x, y);
+    // }
+
     setDestination({ x: x, y: y });
 
     //update redux state (necessary to save player positions on refresh)
@@ -296,6 +306,56 @@ const GrassCanvas = (props) => {
       return "down";
     } else if (curr.y < prev.y) {
       return "up";
+    }
+  }
+
+  function simulateMovement(x, y) {
+    console.log(reduxPath);
+    for (let i = 0; i < reduxPath.length; i++) {
+      let countTo48 = 0;
+      if (i === reduxPath.length - 1) {
+      } else {
+        console.log(reduxPath[i][1].x, reduxPath[i + 1][1].x);
+        if (reduxPath[i][1].x < reduxPath[i + 1][1].x) {
+          console.log("here");
+          while (reduxPath[i][1].x + countTo48 < reduxPath[i + 1][1].x) {
+            updateXY({
+              name: selectedHero.name,
+              x: reduxPath[i][1].x + countTo48,
+              y: reduxPath[i][1].y,
+            });
+
+            countTo48++;
+          }
+        } else if (reduxPath[i].x - countTo48 >= reduxPath[i + 1].x) {
+          while (reduxPath[i].x > reduxPath[i + 1].x) {
+            updateXY({
+              name: selectedHero.name,
+              x: reduxPath[i].x - countTo48,
+              y: reduxPath[i].y,
+            });
+            countTo48++;
+          }
+        } else if (reduxPath[i].y < reduxPath[i + 1].y) {
+          while (reduxPath[i].y < reduxPath[i + 1].y) {
+            updateXY({
+              name: selectedHero.name,
+              x: reduxPath[i].x,
+              y: reduxPath[i].y + countTo48,
+            });
+            countTo48++;
+          }
+        } else if (reduxPath[i].y > reduxPath[i + 1].y) {
+          while (reduxPath[i].y < reduxPath[i + 1].y) {
+            updateXY({
+              name: selectedHero.name,
+              x: reduxPath[i].x,
+              y: reduxPath[i].y - countTo48,
+            });
+            countTo48++;
+          }
+        }
+      }
     }
   }
 
