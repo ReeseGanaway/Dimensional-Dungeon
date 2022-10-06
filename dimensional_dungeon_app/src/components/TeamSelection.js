@@ -57,23 +57,23 @@ const TeamSelection = (props) => {
     //if char is not currently in active roster
     if (
       !playerTeam.hasOwnProperty(char.id) &&
+      currentChar.id !== char.id &&
       Object.keys(playerTeam).length < charLimit
     ) {
       let tempCurr = convertToChar(char, defaultDir);
       tempCurr.updatePos(null, null);
-      console.log(tempCurr);
+
       setCurrentChar(tempCurr);
       canvas.style.cursor = 'url("' + char.icon + '") 25 15, auto';
       const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "team-select-icon selected";
     }
     //if char is currently in active roster
-    else if (playerTeam.hasOwnProperty(char.id)) {
+    else if (playerTeam.hasOwnProperty(char.id) || currentChar.id === char.id) {
       const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "";
       if (currentChar && char.id === currentChar.id) {
-        setSelectedHero(null);
-        setCurrentChar();
+        setCurrentChar({});
       }
       canvas.style.cursor = "";
       delete playerTeam[char.id];

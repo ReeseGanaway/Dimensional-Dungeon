@@ -40,8 +40,8 @@ const GrassCanvas = (props) => {
   );
   const [enemyTeam, setEnemyTeam] = useState(
     activeRosterToPlayerTeam({
-      penguin: collection.penguin,
-      twoFace: collection.twoFace,
+      penguin: { ...collection["penguin"], x: 432, y: 432, dir: "up" },
+      twoFace: { ...collection["twoFace"], x: 384, y: 432, dir: "up" },
     })
   );
 
@@ -49,7 +49,8 @@ const GrassCanvas = (props) => {
   const [firstRender, setFirstRender] = useState(true);
   const [charLimit, setCharLimit] = useState(4);
   const [openSet, setOpenSet] = useState({});
-  const [lDest, setLDest] = useState({});
+  const [destination, setDestination] = useState({});
+  const [turnInfo, setTurnInfo] = useState({});
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -112,7 +113,7 @@ const GrassCanvas = (props) => {
     }
     //we can reset the destination
     //because there should never be a destination if a new hero is selected
-    setDestination({ x: null, y: null });
+
     dispatch(modeActions.setSelectedHero(hero));
   };
 
@@ -132,10 +133,6 @@ const GrassCanvas = (props) => {
 
   const addActiveChar = (hero) => {
     dispatch(rosterActions.addActiveChar(hero));
-  };
-
-  const setDestination = (destination) => {
-    dispatch(modeActions.setDestination(destination));
   };
 
   const setPath = (path) => {
@@ -190,8 +187,8 @@ const GrassCanvas = (props) => {
             manhattanDist(
               currentChar.position.x,
               currentChar.position.y,
-              lDest.x,
-              lDest.y,
+              destination.x,
+              destination.y,
               currentChar.moveRange
             )
           ) {
@@ -231,7 +228,7 @@ const GrassCanvas = (props) => {
             y <= position.y + 47
           ) {
             path = null;
-            setLDest({});
+            setDestination({});
             setCurrentChar(playerTeam[key]);
             setOpenSet(
               tilesInMoveRange(
@@ -446,7 +443,7 @@ const GrassCanvas = (props) => {
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
     let y = e.clientY - rect.top;
-    setLDest({ x: x, y: y });
+    setDestination({ x: x, y: y });
   }, 5);
 
   async function drawPath(e) {
@@ -566,7 +563,7 @@ const GrassCanvas = (props) => {
 
       //if movement mode is active
       if (mode.movement.active) {
-        if (lDest.x && lDest.y) {
+        if (destination.x && destination.y) {
           //get the path the character would take to get to the destination
           path = astar(
             10,
@@ -574,7 +571,7 @@ const GrassCanvas = (props) => {
             currentChar.position.x / 48,
             currentChar.position.y / 48,
             currentChar.moveRange,
-            lDest,
+            destination,
             canvasRef.current.getContext("2d")
           );
 
@@ -764,6 +761,12 @@ const GrassCanvas = (props) => {
 
       if (Object.keys(playerTeam).length > 0) {
         for (const [key, value] of Object.entries(playerTeam)) {
+          value.draw();
+        }
+      }
+
+      if (Object.keys(enemyTeam).length > 0) {
+        for (const [key, value] of Object.entries(enemyTeam)) {
           value.draw();
         }
       }
