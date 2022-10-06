@@ -38,6 +38,9 @@ const GrassCanvas = (props) => {
   const [playerTeam, setPlayerTeam] = useState(
     activeRosterToPlayerTeam(activeRoster)
   );
+  const [enemyTeam, setEnemyTeam] =
+    useState();
+    //activeRosterToPlayerTeam(activeRoster)
   const [currentChar, setCurrentChar] = useState({});
   const [firstRender, setFirstRender] = useState(true);
   const [charLimit, setCharLimit] = useState(4);
