@@ -8,36 +8,42 @@ import astar from "./astar";
 import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
 import { debounce, times } from "lodash";
-import { current } from "@reduxjs/toolkit";
 import { manhattanDist } from "../functions/manhattanDist";
+import { Character } from "../classes/Character";
+import {
+  activeRosterToPlayerTeam,
+  playerTeamToActiveRoster,
+} from "../functions/characterConversions";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
   let direction;
+  let defaultDir = "down";
   let path;
 
   //redux state variables
 
-  //full states
+  //redux states
   const roster = useSelector((state) => state.roster);
   const mode = useSelector((state) => state.mode);
 
   //individual data in states
-  const selectedHero = mode.selectedHero.hero;
-  const destination = mode.movement.destination;
-  const openSet = mode.movement.openSet;
-  const reduxPath = mode.movement.path;
+
   const activeRoster = roster.activeRoster;
   const collection = roster.collection;
 
   const dispatch = useDispatch();
 
-  const [playerTeam, setPlayerTeam] = useState({});
+  const [playerTeam, setPlayerTeam] = useState(
+    activeRosterToPlayerTeam(activeRoster)
+  );
+  const [currentChar, setCurrentChar] = useState({});
   const [firstRender, setFirstRender] = useState(true);
-  const [heroLimit, setHeroLimit] = useState(4);
-  const [stepCount, setStepCount] = useState(0);
+  const [charLimit, setCharLimit] = useState(4);
   const [pathState, setPathState] = useState([]);
+  const [openSet, setOpenSet] = useState({});
+  const [lDest, setLDest] = useState({});
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -49,10 +55,6 @@ const GrassCanvas = (props) => {
 
   const mapImage = new Image();
   mapImage.src = "/images/grassMap.png";
-
-  const addHeroActive = (hero) => {
-    dispatch(rosterActions.addHeroActive(hero));
-  };
 
   const updateXY = (newPosition) => {
     dispatch(rosterActions.updateXY(newPosition));
@@ -108,26 +110,38 @@ const GrassCanvas = (props) => {
     dispatch(modeActions.setSelectedHero(hero));
   };
 
-  const resetActiveHeroes = () => {
+  const resetActiveRoster = () => {
     for (const [key, value] of Object.entries(activeRoster)) {
       if (mode.teamSelection.active) {
         const teamSelectIcon = document.getElementById(key);
         teamSelectIcon.className = "";
       }
     }
-    dispatch(rosterActions.resetActiveHeroes());
+    dispatch(rosterActions.resetActiveRoster());
+  };
+
+  const setActiveRoster = (newTeam) => {
+    dispatch(rosterActions.setActiveRoster(newTeam));
+  };
+
+  const addActiveChar = (hero) => {
+    dispatch(rosterActions.addActiveChar(hero));
   };
 
   const setDestination = (destination) => {
     dispatch(modeActions.setDestination(destination));
   };
 
-  const setOpenSet = (openSet) => {
-    dispatch(modeActions.setOpenSet(openSet));
-  };
-
   const setPath = (path) => {
     dispatch(modeActions.setPath(path));
+  };
+
+  //Make sure user meant to leave page
+  window.onbeforeunload = function () {
+    console.log("Would you like to save your game?");
+    console.log(playerTeamToActiveRoster(playerTeam, roster));
+    setActiveRoster(playerTeamToActiveRoster(playerTeam, roster));
+    return "Would you like to save your game?";
   };
 
   //function to determine and handle what should be happening when the canvas is clicked
@@ -140,10 +154,10 @@ const GrassCanvas = (props) => {
     //if user is still in process of choosing team
     if (mode.teamSelection.active) {
       //if user has selected a hero to use, but hasnt placed them on the canvas yet
-      if (selectedHero) {
+      if (Object.keys(currentChar).length !== 0) {
         if (
-          checkTileForHero(x, y, activeRoster) &&
-          checkTileForHero(x, y, activeRoster) !== selectedHero.name
+          checkTileForHero(x, y, playerTeam) &&
+          checkTileForHero(x, y, playerTeam) !== currentChar.id
         ) {
           window.alert("There is already a character on this tile!");
         } else if (!checkTeamSelectTile(x, y)) {
@@ -156,40 +170,44 @@ const GrassCanvas = (props) => {
       }
 
       //if user has selected a hero that is already on the canvas, but they want to move it
-      else if (!selectedHero && checkTileForHero(x, y, activeRoster)) {
-        moveHeroDuringTeamSelect(checkTileForHero(x, y, activeRoster));
+      else if (
+        Object.keys(currentChar).length === 0 &&
+        checkTileForHero(x, y, playerTeam)
+      ) {
+        moveCharDuringTeamSelect(checkTileForHero(x, y, playerTeam));
       }
     } else if (mode.battle.active) {
       //movement mode is active (last click was a click on an ally character)
       if (mode.movement.active) {
-        if (!checkTileForHero(x, y, activeRoster)) {
+        if (!checkTileForHero(x, y, playerTeam)) {
           if (
             manhattanDist(
-              selectedHero.x,
-              selectedHero.y,
-              destination.x,
-              destination.y,
-              selectedHero.movement
+              currentChar.position.x,
+              currentChar.position.y,
+              lDest.x,
+              lDest.y,
+              currentChar.moveRange
             )
           ) {
             moveCharacter(x, y);
           } else {
-            setSelectedHero(null);
+            setCurrentChar({});
             endMovement();
           }
-        } else if (checkTileForHero(x, y, activeRoster) === selectedHero.name) {
+        } else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
           endMovement();
-          setSelectedHero(null);
+          setCurrentChar({});
+          setOpenSet({});
         } else {
-          let key = checkTileForHero(x, y, activeRoster);
-          setSelectedHero(activeRoster[key]);
+          let key = checkTileForHero(x, y, playerTeam);
+          setCurrentChar(playerTeam[key]);
           setOpenSet(
             tilesInMoveRange(
-              activeRoster[key].x,
-              activeRoster[key].y,
+              playerTeam[key].position.x,
+              playerTeam[key].position.y,
               10,
               10,
-              activeRoster[key].movement
+              playerTeam[key].moveRange
             )
           );
         }
@@ -197,24 +215,28 @@ const GrassCanvas = (props) => {
       //if we arent in movement mode...
       else {
         //cycle through player's team
-        for (const [key, value] of Object.entries(activeRoster)) {
+        for (const [key, value] of Object.entries(playerTeam)) {
+          const position = value.position;
           //if the coordinates of the click are on the same 48 x 48 tile as one of the ally characters
           if (
-            x >= value.x &&
-            x <= value.x + 47 &&
-            y >= value.y &&
-            y <= value.y + 47
+            x >= position.x &&
+            x <= position.x + 47 &&
+            y >= position.y &&
+            y <= position.y + 47
           ) {
-            setSelectedHero(activeRoster[key]);
+            path = null;
+            setLDest({});
+            setCurrentChar(playerTeam[key]);
             setOpenSet(
               tilesInMoveRange(
-                activeRoster[key].x,
-                activeRoster[key].y,
+                position.x,
+                position.y,
                 10,
                 10,
-                activeRoster[key].movement
+                playerTeam[key].moveRange
               )
             );
+
             //put us in movement mode
             activateMovement();
 
@@ -242,59 +264,65 @@ const GrassCanvas = (props) => {
     return false;
   }
 
-  function moveHeroDuringTeamSelect(name) {
-    const tempHero = { ...activeRoster[name] };
-    setSelectedHero(tempHero);
-    delete playerTeam[name];
-
+  function moveCharDuringTeamSelect(id) {
+    const { name, spriteSheet, icon, moveRange, dir, position } =
+      playerTeam[id];
+    const tempCurr = new Character(
+      id,
+      name,
+      spriteSheet.src,
+      icon,
+      moveRange,
+      dir,
+      position
+    );
+    setCurrentChar(tempCurr);
+    delete playerTeam[id];
     let canvasDiv = document.getElementById("canvas-div");
-    canvasDiv.style.cursor = 'url("' + tempHero.displayIcon + '") 25 15, auto';
+    canvasDiv.style.cursor = 'url("' + tempCurr.icon + '") 25 15, auto';
   }
 
   //function for setting character coords when in team selection mode
   function setNewHero(x, y) {
-    const newPosition = {
-      name: selectedHero.name,
-      x: x - (x % 48),
-      y: y - (y % 48),
-    };
-    updateXY(newPosition);
-    let newTeamSprites = { ...playerTeam };
-    let sprite = new Image();
-    sprite.src = selectedHero.spriteSheet;
+    x = x - (x % 48);
+    y = y - (y % 48);
+    const { id, name, spriteSheet, icon, moveRange, dir, position } =
+      currentChar;
+    const tempCurr = new Character(
+      id,
+      name,
+      spriteSheet.src,
+      icon,
+      moveRange,
+      dir,
+      {
+        x: x,
+        y: y,
+      }
+    );
 
-    newTeamSprites[selectedHero.name] = sprite;
+    const newTeam = { ...playerTeam, [tempCurr.id]: tempCurr };
+    setPlayerTeam(newTeam);
+    setCurrentChar({});
 
-    setPlayerTeam(newTeamSprites);
-
-    setTeamSelectionHero(null);
     let canvasDiv = document.getElementById("canvas-div");
     canvasDiv.style.cursor = "";
-    setSelectedHero(null);
   }
 
   //function for moving the character
   function moveCharacter(x, y) {
-    // if (path) {
-    //   console.log(Object.entries(path).reverse());
-    //   setPath(Object.entries(path).reverse());
-    //   simulateMovement(x, y);
-    // }
+    if (path) {
+      let pathArray = Object.entries(path).reverse();
+      simulateMovement(pathArray);
+    }
 
-    setDestination({ x: x, y: y });
-
-    //update redux state (necessary to save player positions on refresh)
-
-    updateXY({
-      name: selectedHero.name,
-      x: x - (x % 48),
-      y: y - (y % 48),
-    });
-    setOpenSet(null);
+    setOpenSet({});
 
     //turn off movement mode
     endMovement();
-    setSelectedHero(null);
+
+    setCurrentChar({});
+    path = null;
   }
 
   function getDirection(prev, curr) {
@@ -309,52 +337,101 @@ const GrassCanvas = (props) => {
     }
   }
 
-  function simulateMovement(x, y) {
-    console.log(reduxPath);
-    for (let i = 0; i < reduxPath.length; i++) {
-      let countTo48 = 0;
-      if (i === reduxPath.length - 1) {
-      } else {
-        console.log(reduxPath[i][1].x, reduxPath[i + 1][1].x);
-        if (reduxPath[i][1].x < reduxPath[i + 1][1].x) {
-          console.log("here");
-          while (reduxPath[i][1].x + countTo48 < reduxPath[i + 1][1].x) {
-            updateXY({
-              name: selectedHero.name,
-              x: reduxPath[i][1].x + countTo48,
-              y: reduxPath[i][1].y,
-            });
+  function simulateMovement(pathArray) {
+    let countTo48 = 0;
 
-            countTo48++;
-          }
-        } else if (reduxPath[i].x - countTo48 >= reduxPath[i + 1].x) {
-          while (reduxPath[i].x > reduxPath[i + 1].x) {
-            updateXY({
-              name: selectedHero.name,
-              x: reduxPath[i].x - countTo48,
-              y: reduxPath[i].y,
-            });
-            countTo48++;
-          }
-        } else if (reduxPath[i].y < reduxPath[i + 1].y) {
-          while (reduxPath[i].y < reduxPath[i + 1].y) {
-            updateXY({
-              name: selectedHero.name,
-              x: reduxPath[i].x,
-              y: reduxPath[i].y + countTo48,
-            });
-            countTo48++;
-          }
-        } else if (reduxPath[i].y > reduxPath[i + 1].y) {
-          while (reduxPath[i].y < reduxPath[i + 1].y) {
-            updateXY({
-              name: selectedHero.name,
-              x: reduxPath[i].x,
-              y: reduxPath[i].y - countTo48,
-            });
-            countTo48++;
-          }
+    if (pathArray.length === 1) {
+    } else {
+      //character is moving right
+      if (pathArray[0][1].x < pathArray[1][1].x) {
+        while (pathArray[0][1].x + countTo48 < pathArray[1][1].x) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            playerTeam[currentChar.id].updatePos(
+              playerTeam[currentChar.id].position.x + 1,
+              playerTeam[currentChar.id].position.y
+            );
+            playerTeam[currentChar.id].setDirection("right");
+            const newTeam = { ...playerTeam };
+            setPlayerTeam(newTeam);
+          }, 10 * tempCountTo48);
+
+          countTo48++;
         }
+
+        setTimeout(() => {
+          simulateMovement(pathArray.slice(1));
+        }, 10 * countTo48);
+      }
+
+      //character is moving left
+      else if (pathArray[0][1].x > pathArray[1][1].x) {
+        while (pathArray[0][1].x - countTo48 > pathArray[1][1].x) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            playerTeam[currentChar.id].updatePos(
+              playerTeam[currentChar.id].position.x - 1,
+              playerTeam[currentChar.id].position.y
+            );
+            playerTeam[currentChar.id].setDirection("left");
+            const newTeam = { ...playerTeam };
+            setPlayerTeam(newTeam);
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateMovement(pathArray.slice(1));
+        }, 10 * countTo48);
+      }
+      //character is moving down
+      else if (pathArray[0][1].y < pathArray[1][1].y) {
+        while (pathArray[0][1].y + countTo48 < pathArray[1][1].y) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            playerTeam[currentChar.id].updatePos(
+              playerTeam[currentChar.id].position.x,
+              playerTeam[currentChar.id].position.y + 1
+            );
+            playerTeam[currentChar.id].setDirection("down");
+            const newTeam = { ...playerTeam };
+            setPlayerTeam(newTeam);
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateMovement(pathArray.slice(1));
+        }, 10 * countTo48);
+      }
+
+      //character is moving up
+      else if (pathArray[0][1].y > pathArray[1][1].y) {
+        playerTeam[currentChar.id].setDirection("up");
+        while (pathArray[0][1].y - countTo48 > pathArray[1][1].y) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            playerTeam[currentChar.id].updatePos(
+              playerTeam[currentChar.id].position.x,
+              playerTeam[currentChar.id].position.y - 1
+            );
+
+            const newTeam = { ...playerTeam };
+            setPlayerTeam(newTeam);
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateMovement(pathArray.slice(1));
+        }, 10 * countTo48);
       }
     }
   }
@@ -363,7 +440,7 @@ const GrassCanvas = (props) => {
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
     let y = e.clientY - rect.top;
-    setDestination({ x: x, y: y });
+    setLDest({ x: x, y: y });
   }, 5);
 
   async function drawPath(e) {
@@ -430,7 +507,7 @@ const GrassCanvas = (props) => {
   useEffect(() => {
     setFirstRender(false);
     if (!mode.battle.active) {
-      setSelectedHero(null);
+      setCurrentChar({});
       activateTeamSelection();
 
       for (const [key] of Object.entries(activeRoster)) {
@@ -440,23 +517,14 @@ const GrassCanvas = (props) => {
         }
       }
     }
-
-    let newTeamSprites = {};
-    if (Object.keys(roster.activeRoster).length > 0) {
-      for (const [key, value] of Object.entries(roster.activeRoster)) {
-        let sprite = new Image();
-        sprite.src = value.spriteSheet;
-
-        newTeamSprites = { ...newTeamSprites, [value.name]: sprite };
-      }
-      setPlayerTeam(newTeamSprites);
-    }
   }, []);
 
   useEffect(() => {
     if (firstRender) {
       return;
     }
+
+    //console.log("rerender or sumn");
 
     mapImage.onload = () => {
       canvas.width = mapImage.width;
@@ -478,9 +546,8 @@ const GrassCanvas = (props) => {
       if (openSet) {
         for (const [key, value] of Object.entries(openSet)) {
           if (
-            checkTileForHero(value.x, value.y, activeRoster) &&
-            checkTileForHero(value.x, value.y, activeRoster) !==
-              selectedHero.name
+            checkTileForHero(value.x, value.y, playerTeam) &&
+            checkTileForHero(value.x, value.y, playerTeam) !== currentChar.id
           ) {
             context.fillStyle = "rgba(255,0,0,0.5)";
             context.fillRect(value.x, value.y, 48, 48);
@@ -493,15 +560,15 @@ const GrassCanvas = (props) => {
 
       //if movement mode is active
       if (mode.movement.active) {
-        if (destination.x && destination.y) {
+        if (lDest.x && lDest.y) {
           //get the path the character would take to get to the destination
           path = astar(
             10,
             10,
-            selectedHero.x / 48,
-            selectedHero.y / 48,
-            selectedHero.movement,
-            destination,
+            currentChar.position.x / 48,
+            currentChar.position.y / 48,
+            currentChar.moveRange,
+            lDest,
             canvasRef.current.getContext("2d")
           );
 
@@ -691,33 +758,7 @@ const GrassCanvas = (props) => {
 
       if (Object.keys(playerTeam).length > 0) {
         for (const [key, value] of Object.entries(playerTeam)) {
-          if (!value.complete) {
-            value.onload = () => {
-              context.drawImage(
-                value,
-                collection[key].x,
-                collection[key].y,
-                48,
-                48,
-                activeRoster[key].x,
-                activeRoster[key].y,
-                48,
-                48
-              );
-            };
-          } else {
-            context.drawImage(
-              value,
-              collection[key].x,
-              collection[key].y,
-              48,
-              48,
-              activeRoster[key].x,
-              activeRoster[key].y,
-              48,
-              48
-            );
-          }
+          value.draw();
         }
       }
     };
@@ -757,7 +798,7 @@ const GrassCanvas = (props) => {
           <button
             className="btn reset-active-heroes"
             onClick={() => {
-              resetActiveHeroes();
+              resetActiveRoster();
               setPlayerTeam({});
             }}
           >
@@ -780,14 +821,14 @@ const GrassCanvas = (props) => {
         </div>
         <div id="hero-info" className="hero-info col-4">
           <div className="row">
-            {selectedHero ? (
+            {Object.keys(currentChar).length > 0 ? (
               <>
                 <div className="row hero-info-row">
                   <div className="col current-hero-display-icon">
-                    <h5>{selectedHero.displayName}</h5>
+                    <h5>{currentChar.name}</h5>
                   </div>
                   <div className="col-md-auto current-hero-display-icon">
-                    <img src={selectedHero.displayIcon} />
+                    <img src={currentChar.icon} />
                   </div>
                 </div>
                 <div className="row hero-info-row">
@@ -797,14 +838,14 @@ const GrassCanvas = (props) => {
                   <div className="row hero-info-sub-row">
                     <div className="col">
                       x:
-                      {activeRoster[selectedHero.name].x !== null
-                        ? activeRoster[selectedHero.name].x
+                      {currentChar.position.x !== null
+                        ? currentChar.position.x
                         : " N/A"}
                     </div>
                     <div className="col">
                       y:
-                      {activeRoster[selectedHero.name].y !== null
-                        ? activeRoster[selectedHero.name].y
+                      {currentChar.position.y !== null
+                        ? currentChar.position.y
                         : " N/A"}
                     </div>
                   </div>
@@ -824,7 +865,10 @@ const GrassCanvas = (props) => {
           <TeamSelection
             playerTeam={playerTeam}
             setPlayerTeam={setPlayerTeam}
-            heroLimit={heroLimit}
+            currentChar={currentChar}
+            setCurrentChar={setCurrentChar}
+            charLimit={charLimit}
+            defaultDir={defaultDir}
           />
         ) : null}
       </div>

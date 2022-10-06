@@ -1,5 +1,7 @@
+import { current } from "@reduxjs/toolkit";
 import React, { Component, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { convertToChar } from "../functions/characterConversions";
 import { modeActions } from "../redux/slices/mode";
 import { rosterActions } from "../redux/slices/roster";
 
@@ -12,73 +14,85 @@ const TeamSelection = (props) => {
   const activeRoster = roster.activeRoster;
   const selectedHero = mode.selectedHero.hero;
 
-  const setSelectedHero = (hero) => {
-    dispatch(modeActions.setSelectedHero(hero));
+  const currentChar = props.currentChar;
+  const setCurrentChar = props.setCurrentChar;
+  const playerTeam = props.playerTeam;
+  const setPlayerTeam = props.setPlayerTeam;
+  const charLimit = props.charLimit;
+  const defaultDir = props.defaultDir;
+
+  const setSelectedHero = (char) => {
+    dispatch(modeActions.setSelectedHero(char));
   };
 
-  const addHeroActive = (hero) => {
-    dispatch(rosterActions.addHeroActive(hero));
+  const addActiveChar = (char) => {
+    dispatch(rosterActions.addActiveChar(char));
   };
 
-  const removeActiveHero = (name) => {
-    dispatch(rosterActions.deleteActiveHero(name));
+  const deleteActiveChar = (id) => {
+    dispatch(rosterActions.deleteActiveChar(id));
   };
 
   const updateXY = (newPosition) => {
     dispatch(rosterActions.updateXY(newPosition));
   };
 
-  const displayHero = () => {
+  const displayChar = () => {
     return Object.keys(collection).map((key) => {
       return (
         <img
-          key={collection[key].name}
-          id={collection[key].name}
-          src={collection[key].displayIcon}
-          alt={collection[key].displayName}
+          key={collection[key].id}
+          id={collection[key].id}
+          src={collection[key].icon}
+          alt={collection[key].name}
           onClick={() => addToTeam(collection[key])}
         />
       );
     });
   };
 
-  //function adds hero to active roster, but removes if the hero is already on the active roster
-  const addToTeam = (hero) => {
+  //function adds char to active roster, but removes if the char is already on the active roster
+  const addToTeam = (char) => {
     let canvas = document.getElementById("canvas-div");
-    //if hero is not currently in active roster
+    //if char is not currently in active roster
     if (
-      !activeRoster.hasOwnProperty(hero.name) &&
-      Object.keys(activeRoster).length < props.heroLimit
+      !playerTeam.hasOwnProperty(char.id) &&
+      Object.keys(playerTeam).length < charLimit
     ) {
-      addHeroActive(hero);
-      updateXY({ name: hero.name, x: null, y: null });
-      setSelectedHero(hero);
-      canvas.style.cursor = 'url("' + hero.displayIcon + '") 25 15, auto';
-      const teamSelectIcon = document.getElementById(hero.name);
+      let tempCurr = convertToChar(char, defaultDir);
+      tempCurr.updatePos(null, null);
+      console.log(tempCurr);
+      setCurrentChar(tempCurr);
+      //addActiveChar(char);
+      //updateXY({ id: char.id, x: null, y: null });
+      setSelectedHero(char);
+      canvas.style.cursor = 'url("' + char.icon + '") 25 15, auto';
+      const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "team-select-icon selected";
     }
-    //if hero is currently in active roster
-    else if (activeRoster.hasOwnProperty(hero.name)) {
-      const teamSelectIcon = document.getElementById(hero.name);
+    //if char is currently in active roster
+    else if (playerTeam.hasOwnProperty(char.id)) {
+      const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "";
-      removeActiveHero(hero.name);
-      if (selectedHero && hero.name === selectedHero.name) {
+      deleteActiveChar(char.id);
+      if (currentChar && char.id === currentChar.id) {
         setSelectedHero(null);
+        setCurrentChar();
       }
       canvas.style.cursor = "";
     } else {
       window.alert(
-        "You can't have more than 4 heroes on this map! Please deselect a hero if you wish to add another."
+        "You can't have more than 4 characters on this map! Please deselect a character if you wish to add another."
       );
     }
-    if (props.playerTeam[hero.name]) {
-      delete props.playerTeam[hero.name];
+    if (playerTeam[char.id]) {
+      delete playerTeam[char.id];
     }
   };
 
   return (
     <div className="row justify-content-center">
-      <div className="col user-all-heroes">{displayHero()}</div>
+      <div className="col user-all-heroes">{displayChar()}</div>
     </div>
   );
 };

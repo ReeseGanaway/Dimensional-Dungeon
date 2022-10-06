@@ -1,13 +1,15 @@
-const checkTileForHero = (x, y, activeRoster) => {
-  for (const [key, value] of Object.entries(activeRoster)) {
+const checkTileForHero = (x, y, playerTeam) => {
+  for (const [key, value] of Object.entries(playerTeam)) {
+    const { id, position } = value;
+    //console.log(value);
     //if the coordinates of the click are on the same 48 x 48 tile as one of the ally characters
     if (
-      x >= value.x &&
-      x <= value.x + 47 &&
-      y >= value.y &&
-      y <= value.y + 47
+      x >= position.x &&
+      x <= position.x + 47 &&
+      y >= position.y &&
+      y <= position.y + 47
     ) {
-      return value.name;
+      return id;
     }
   }
   return null;
