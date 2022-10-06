@@ -63,9 +63,6 @@ const TeamSelection = (props) => {
       tempCurr.updatePos(null, null);
       console.log(tempCurr);
       setCurrentChar(tempCurr);
-      //addActiveChar(char);
-      //updateXY({ id: char.id, x: null, y: null });
-      setSelectedHero(char);
       canvas.style.cursor = 'url("' + char.icon + '") 25 15, auto';
       const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "team-select-icon selected";
@@ -74,19 +71,17 @@ const TeamSelection = (props) => {
     else if (playerTeam.hasOwnProperty(char.id)) {
       const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "";
-      deleteActiveChar(char.id);
       if (currentChar && char.id === currentChar.id) {
         setSelectedHero(null);
         setCurrentChar();
       }
       canvas.style.cursor = "";
+      delete playerTeam[char.id];
+      setPlayerTeam({ ...playerTeam });
     } else {
       window.alert(
         "You can't have more than 4 characters on this map! Please deselect a character if you wish to add another."
       );
-    }
-    if (playerTeam[char.id]) {
-      delete playerTeam[char.id];
     }
   };
 

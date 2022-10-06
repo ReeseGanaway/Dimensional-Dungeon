@@ -38,13 +38,16 @@ const GrassCanvas = (props) => {
   const [playerTeam, setPlayerTeam] = useState(
     activeRosterToPlayerTeam(activeRoster)
   );
-  const [enemyTeam, setEnemyTeam] =
-    useState();
-    //activeRosterToPlayerTeam(activeRoster)
+  const [enemyTeam, setEnemyTeam] = useState(
+    activeRosterToPlayerTeam({
+      penguin: collection.penguin,
+      twoFace: collection.twoFace,
+    })
+  );
+
   const [currentChar, setCurrentChar] = useState({});
   const [firstRender, setFirstRender] = useState(true);
   const [charLimit, setCharLimit] = useState(4);
-  const [pathState, setPathState] = useState([]);
   const [openSet, setOpenSet] = useState({});
   const [lDest, setLDest] = useState({});
 
