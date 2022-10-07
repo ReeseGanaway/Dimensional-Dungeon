@@ -3,10 +3,6 @@ import { createSlice } from "@reduxjs/toolkit";
 const initMode = {
   movement: {
     active: false,
-    openSet: null,
-    path: null,
-    closedSet: [],
-    destination: { x: null, y: null },
   },
   battle: { active: false, currentHero: null },
   teamSelection: { active: false, currentHero: null },
@@ -38,40 +34,12 @@ export const mode = createSlice({
         selectedHero: { ...state.selectedHero, hero: null },
       };
     },
-    setOpenSet(state, action) {
-      return {
-        ...state,
-        movement: { ...state.movement, openSet: action.payload },
-      };
-    },
-    setPath(state, action) {
-      return {
-        ...state,
-        movement: { ...state.movement, path: action.payload },
-      };
-    },
-    setDestination(state, action) {
-      return {
-        ...state,
-        movement: {
-          ...state.movement,
-          destination: { x: action.payload.x, y: action.payload.y },
-        },
-      };
-    },
-    clearDestination(state) {
-      return {
-        ...state,
-        movement: { ...state.movement, destination: { x: null, y: null } },
-      };
-    },
     activateTeamSelection(state) {
       return {
         ...state,
         teamSelection: { ...state.teamSelection, active: true },
       };
     },
-
     deactivateTeamSelection(state) {
       return {
         ...state,

@@ -7,7 +7,7 @@ import TeamSelection from "./TeamSelection";
 import astar from "./astar";
 import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
-import { debounce, times } from "lodash";
+import { debounce } from "lodash";
 import { manhattanDist } from "../functions/manhattanDist";
 import { Character } from "../classes/Character";
 import {
@@ -18,6 +18,7 @@ import {
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
+  const mapName = "grassCanvas";
   let direction;
   let defaultDir = "down";
   let path;
@@ -25,8 +26,9 @@ const GrassCanvas = (props) => {
   //redux state variables
 
   //redux states
-  const roster = useSelector((state) => state.roster);
   const mode = useSelector((state) => state.mode);
+  //const saveData = useSelector((state) => state.saveData);
+  const roster = useSelector((state) => state.roster);
 
   //individual data in states
 
@@ -40,8 +42,20 @@ const GrassCanvas = (props) => {
   );
   const [enemyTeam, setEnemyTeam] = useState(
     activeRosterToPlayerTeam({
-      penguin: { ...collection["penguin"], x: 432, y: 432, dir: "up" },
-      twoFace: { ...collection["twoFace"], x: 384, y: 432, dir: "up" },
+      penguin: {
+        ...collection["penguin"],
+        x: 432,
+        y: 432,
+        dir: "up",
+        used: false,
+      },
+      twoFace: {
+        ...collection["twoFace"],
+        x: 384,
+        y: 432,
+        dir: "up",
+        used: false,
+      },
     })
   );
 
@@ -50,7 +64,9 @@ const GrassCanvas = (props) => {
   const [charLimit, setCharLimit] = useState(4);
   const [openSet, setOpenSet] = useState({});
   const [destination, setDestination] = useState({});
-  const [turnInfo, setTurnInfo] = useState({});
+  // const [sessionInfo, setSessionInfo] = useState({
+  //   ...saveData["maps"][mapName],
+  // });
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -66,10 +82,6 @@ const GrassCanvas = (props) => {
   const updateXY = (newPosition) => {
     dispatch(rosterActions.updateXY(newPosition));
   };
-
-  // const clearRoster = () => {
-  //   dispatch(rosterActions.clearRoster());
-  // };
 
   const resetRoster = () => {
     dispatch(rosterActions.resetRoster());
@@ -182,37 +194,40 @@ const GrassCanvas = (props) => {
     } else if (mode.battle.active) {
       //movement mode is active (last click was a click on an ally character)
       if (mode.movement.active) {
-        if (!checkTileForHero(x, y, playerTeam)) {
-          if (
-            manhattanDist(
-              currentChar.position.x,
-              currentChar.position.y,
-              destination.x,
-              destination.y,
-              currentChar.moveRange
-            )
-          ) {
-            moveCharacter(x, y);
-          } else {
-            setCurrentChar({});
+        if (!currentChar.waiting) {
+          if (!checkTileForHero(x, y, playerTeam)) {
+            if (
+              manhattanDist(
+                currentChar.position.x,
+                currentChar.position.y,
+                destination.x,
+                destination.y,
+                currentChar.moveRange
+              )
+            ) {
+              moveCharacter(x, y);
+            } else {
+              setCurrentChar({});
+              endMovement();
+            }
+          } else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
             endMovement();
+            setCurrentChar({});
+            setOpenSet({});
+          } else {
+            let key = checkTileForHero(x, y, playerTeam);
+            setCurrentChar(playerTeam[key]);
+            setOpenSet(
+              tilesInMoveRange(
+                playerTeam[key].position.x,
+                playerTeam[key].position.y,
+                10,
+                10,
+                playerTeam[key].moveRange
+              )
+            );
           }
-        } else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
-          endMovement();
-          setCurrentChar({});
-          setOpenSet({});
         } else {
-          let key = checkTileForHero(x, y, playerTeam);
-          setCurrentChar(playerTeam[key]);
-          setOpenSet(
-            tilesInMoveRange(
-              playerTeam[key].position.x,
-              playerTeam[key].position.y,
-              10,
-              10,
-              playerTeam[key].moveRange
-            )
-          );
         }
       }
       //if we arent in movement mode...
@@ -827,7 +842,24 @@ const GrassCanvas = (props) => {
               }
             }}
           ></canvas>
+
+          <div className="row">
+            {!mode.battle.active && mode.teamSelection.active ? (
+              <TeamSelection
+                playerTeam={playerTeam}
+                setPlayerTeam={setPlayerTeam}
+                currentChar={currentChar}
+                setCurrentChar={setCurrentChar}
+                charLimit={charLimit}
+                defaultDir={defaultDir}
+              />
+            ) : null}
+            <div>
+              {mode.battle.active && !mode.teamSelection.active ? "HERE" : null}
+            </div>
+          </div>
         </div>
+
         <div id="hero-info" className="hero-info col-4">
           <div className="row">
             {Object.keys(currentChar).length > 0 ? (
@@ -867,19 +899,6 @@ const GrassCanvas = (props) => {
             )}
           </div>
         </div>
-      </div>
-      <div className="row">
-        <div className="col"></div>
-        {!mode.battle.active && mode.teamSelection.active ? (
-          <TeamSelection
-            playerTeam={playerTeam}
-            setPlayerTeam={setPlayerTeam}
-            currentChar={currentChar}
-            setCurrentChar={setCurrentChar}
-            charLimit={charLimit}
-            defaultDir={defaultDir}
-          />
-        ) : null}
       </div>
     </div>
   );

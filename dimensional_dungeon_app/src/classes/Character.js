@@ -1,7 +1,9 @@
 export class Character {
   step = 0;
+  used = false;
+  waiting = false;
 
-  constructor(id, name, spriteSheet, icon, moveRange, dir, position) {
+  constructor(id, name, spriteSheet, icon, moveRange, dir, position, used) {
     this.id = id;
     this.name = name;
     this.spriteSheet = new Image();
@@ -198,5 +200,9 @@ export class Character {
 
   setDirection(dir) {
     this.dir = dir;
+  }
+
+  toggleUsed() {
+    this.used = !this.used;
   }
 }

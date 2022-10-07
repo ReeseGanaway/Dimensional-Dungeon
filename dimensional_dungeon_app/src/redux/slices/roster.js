@@ -62,9 +62,6 @@ export const roster = createSlice({
         };
       }
     },
-    clearRoster(state, action) {
-      return {};
-    },
     resetRoster(state, action) {
       return initialRoster;
     },
