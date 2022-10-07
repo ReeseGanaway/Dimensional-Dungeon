@@ -1,6 +1,5 @@
 export class Character {
   step = 0;
-  used = false;
   waiting = false;
 
   constructor(id, name, spriteSheet, icon, moveRange, dir, position, used) {
@@ -12,6 +11,8 @@ export class Character {
     this.moveRange = moveRange;
     this.dir = dir;
     this.position = position;
+    this.previousPosition = { ...position };
+    this.used = used;
   }
 
   draw() {
@@ -188,7 +189,9 @@ export class Character {
     }
   }
 
+  //update the characters current position
   updatePos(newX, newY) {
+    console.log(newX, newY);
     this.position.x = newX;
     this.position.y = newY;
     if (this.step === 47) {
@@ -198,11 +201,21 @@ export class Character {
     }
   }
 
+  //update the characters previous position
+  updatePrevPos(newX, newY) {
+    this.previousPosition.x = newX;
+    this.previousPosition.y = newY;
+  }
+
   setDirection(dir) {
     this.dir = dir;
   }
 
   toggleUsed() {
     this.used = !this.used;
+  }
+
+  toggleWaiting() {
+    this.waiting = !this.waiting;
   }
 }

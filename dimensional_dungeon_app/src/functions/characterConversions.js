@@ -21,7 +21,6 @@ export function activeRosterToPlayerTeam(activeRoster) {
 }
 
 export function convertToChar(hero, defaultDir) {
-  let used = false;
   let newChar = new Character(
     hero.id,
     hero.name,
@@ -29,7 +28,8 @@ export function convertToChar(hero, defaultDir) {
     hero.icon,
     hero.moveRange,
     defaultDir,
-    { x: hero.x, y: hero.y }
+    { x: hero.x, y: hero.y },
+    false
   );
   console.log(newChar);
   return newChar;
@@ -38,7 +38,8 @@ export function convertToChar(hero, defaultDir) {
 export function playerTeamToActiveRoster(playerTeam, roster) {
   let newTeam = {};
   for (const [key, value] of Object.entries(playerTeam)) {
-    const { id, name, icon, moveRange, dir, position, used } = value;
+    const { id, name, icon, moveRange, dir, previousPosition, used, waiting } =
+      value;
 
     const newChar = {
       id: id,
@@ -47,8 +48,8 @@ export function playerTeamToActiveRoster(playerTeam, roster) {
       icon: icon,
       moveRange: moveRange,
       dir: dir,
-      x: position.x,
-      y: position.y,
+      x: previousPosition.x,
+      y: previousPosition.y,
       used: used,
     };
     newTeam = { ...newTeam, [newChar.id]: newChar };

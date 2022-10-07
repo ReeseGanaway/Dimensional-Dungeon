@@ -194,7 +194,7 @@ const GrassCanvas = (props) => {
     } else if (mode.battle.active) {
       //movement mode is active (last click was a click on an ally character)
       if (mode.movement.active) {
-        if (!currentChar.waiting) {
+        if (!currentChar.waiting || currentChar.waiting) {
           if (!checkTileForHero(x, y, playerTeam)) {
             if (
               manhattanDist(
@@ -316,7 +316,8 @@ const GrassCanvas = (props) => {
       {
         x: x,
         y: y,
-      }
+      },
+      false
     );
 
     const newTeam = { ...playerTeam, [tempCurr.id]: tempCurr };
@@ -329,10 +330,15 @@ const GrassCanvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
+    const char = playerTeam[currentChar.id];
     if (path) {
       let pathArray = Object.entries(path).reverse();
+      char.updatePrevPos(char.position.x, char.position.y);
       simulateMovement(pathArray);
     }
+
+    char.toggleWaiting();
+    setPlayerTeam({ ...playerTeam });
 
     setOpenSet({});
 
@@ -356,6 +362,7 @@ const GrassCanvas = (props) => {
   }
 
   function simulateMovement(pathArray) {
+    const char = playerTeam[currentChar.id];
     let countTo48 = 0;
 
     if (pathArray.length === 1) {
@@ -366,13 +373,10 @@ const GrassCanvas = (props) => {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x + 1,
-              playerTeam[currentChar.id].position.y
-            );
-            playerTeam[currentChar.id].setDirection("right");
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            char.updatePos(char.position.x + 1, char.position.y);
+            char.setDirection("right");
+
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
@@ -389,13 +393,10 @@ const GrassCanvas = (props) => {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x - 1,
-              playerTeam[currentChar.id].position.y
-            );
-            playerTeam[currentChar.id].setDirection("left");
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            char.updatePos(char.position.x - 1, char.position.y);
+            char.setDirection("left");
+
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
@@ -411,13 +412,10 @@ const GrassCanvas = (props) => {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x,
-              playerTeam[currentChar.id].position.y + 1
-            );
-            playerTeam[currentChar.id].setDirection("down");
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            char.updatePos(char.position.x, char.position.y + 1);
+            char.setDirection("down");
+
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
@@ -430,18 +428,14 @@ const GrassCanvas = (props) => {
 
       //character is moving up
       else if (pathArray[0][1].y > pathArray[1][1].y) {
-        playerTeam[currentChar.id].setDirection("up");
+        char.setDirection("up");
         while (pathArray[0][1].y - countTo48 > pathArray[1][1].y) {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x,
-              playerTeam[currentChar.id].position.y - 1
-            );
+            char.updatePos(char.position.x, char.position.y - 1);
 
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
@@ -855,7 +849,11 @@ const GrassCanvas = (props) => {
               />
             ) : null}
             <div>
-              {mode.battle.active && !mode.teamSelection.active ? "HERE" : null}
+              {mode.battle.active && !mode.teamSelection.active ? (
+                <button onClick={() => console.log(playerTeam)}>
+                  playerTeam
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
