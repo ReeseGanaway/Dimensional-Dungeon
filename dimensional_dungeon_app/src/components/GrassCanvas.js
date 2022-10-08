@@ -97,6 +97,7 @@ const GrassCanvas = (props) => {
   };
 
   const resetMode = () => {
+    setOpenSet({});
     dispatch(modeActions.resetMode());
   };
 

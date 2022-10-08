@@ -5,7 +5,7 @@ const initMode = {
     active: false,
   },
   battle: { active: false, currentHero: null },
-  teamSelection: { active: false, currentHero: null },
+  teamSelection: { active: true, currentHero: null },
   selectedHero: { hero: null },
 };
 export const mode = createSlice({
