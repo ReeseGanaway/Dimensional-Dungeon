@@ -206,9 +206,14 @@ export class Character {
   }
 
   //update the characters previous position
-  updatePrevPos(newX, newY) {
+  updatePrevPos(newX, newY, newDir) {
     this.previousPosition.x = newX;
     this.previousPosition.y = newY;
+    this.previousPosition.dir = newDir;
+  }
+
+  revertPos() {
+    this.position = { ...this.previousPosition };
   }
 
   setDirection(dir) {

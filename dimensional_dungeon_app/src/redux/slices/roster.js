@@ -37,7 +37,6 @@ export const roster = createSlice({
       return void newState;
     },
     setActiveRoster(state, action) {
-      console.log(action.payload);
       return { ...state, activeRoster: action.payload };
     },
     resetActiveRoster(state, action) {

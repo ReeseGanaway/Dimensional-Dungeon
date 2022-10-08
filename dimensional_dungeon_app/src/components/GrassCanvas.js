@@ -20,6 +20,7 @@ const GrassCanvas = (props) => {
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
   const mapName = "grassCanvas";
+  const startingTeam = "ally";
   let direction;
   let defaultDir = "down";
   let path;
@@ -121,16 +122,6 @@ const GrassCanvas = (props) => {
     dispatch(modeActions.deactivateBattle());
   };
 
-  const setSelectedHero = (hero) => {
-    if (hero == null) {
-      setOpenSet(null);
-    }
-    //we can reset the destination
-    //because there should never be a destination if a new hero is selected
-
-    dispatch(modeActions.setSelectedHero(hero));
-  };
-
   const resetActiveRoster = () => {
     for (const [key, value] of Object.entries(activeRoster)) {
       if (mode.teamSelection.active) {
@@ -153,11 +144,33 @@ const GrassCanvas = (props) => {
     dispatch(saveDataActions.clearSave());
   };
 
+  const setSave = (sessionInfo) => {
+    dispatch(saveDataActions.setSave(sessionInfo));
+  };
+
+  function resetGame() {
+    clearSave();
+    resetActiveRoster();
+    resetMode();
+    setPlayerTeam({});
+    turnInfo.turnNum = 0;
+    turnInfo.team = startingTeam;
+    setTurnInfo({ ...turnInfo });
+  }
+
+  function startGame() {
+    deactivateTeamSelection();
+    activateBattle();
+    turnInfo.turnNum = 1;
+    setTurnInfo({ ...turnInfo });
+  }
+
   //Make sure user meant to leave page
   window.onbeforeunload = function () {
     console.log("Would you like to save your game?");
     console.log(playerTeamToActiveRoster(playerTeam, roster));
     setActiveRoster(playerTeamToActiveRoster(playerTeam, roster));
+    setSave({ map: mapName, save: { turnInfo: turnInfo } });
     return "Would you like to save your game?";
   };
 
@@ -226,6 +239,8 @@ const GrassCanvas = (props) => {
             setPlayerTeam({ ...playerTeam });
             setCurrentChar({});
             setOpenSet({});
+            incrementTurn();
+            setTurnInfo({ ...turnInfo });
           } else {
             let key = checkTileForHero(x, y, playerTeam);
             setCurrentChar(playerTeam[key]);
@@ -242,17 +257,26 @@ const GrassCanvas = (props) => {
         }
         //character was already given a action and is waiting for confirmation
         else if (currentChar.waiting) {
+          //if tile clicked contains currentChar
           if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
             currentChar.toggleWaiting();
 
             currentChar.toggleUsed();
             currentChar.updatePrevPos(
               currentChar.position.x,
-              currentChar.position.y
+              currentChar.position.y,
+              currentChar.position.dir
             );
             setPlayerTeam({ ...playerTeam });
             setCurrentChar({});
-
+            setOpenSet({});
+            incrementTurn();
+          } else if (checkTileForHero(x, y, playerTeam) === null) {
+            currentChar.revertPos();
+            currentChar.toggleWaiting();
+            setPlayerTeam({ ...playerTeam });
+            setDestination({});
+            setCurrentChar({});
             setOpenSet({});
           }
         }
@@ -361,22 +385,16 @@ const GrassCanvas = (props) => {
     const char = playerTeam[currentChar.id];
     if (path) {
       let pathArray = Object.entries(path).reverse();
-      char.updatePrevPos(char.position.x, char.position.y);
+      char.updatePrevPos(char.position.x, char.position.y, char.position.dir);
       simulateMovement(pathArray);
     }
 
+    //set current character to waiting
     char.toggleWaiting();
     setPlayerTeam({ ...playerTeam });
 
-    //setOpenSet({});
-
     //turn off movement mode
     endMovement();
-
-    //setCurrentChar({});
-    console.log(currentChar.waiting);
-    console.log(path);
-    //path = null;
   }
 
   function getDirection(prev, curr) {
@@ -478,6 +496,19 @@ const GrassCanvas = (props) => {
     }
   }
 
+  function incrementTurn() {
+    switch (turnInfo.team) {
+      case "ally":
+        for (const [key, value] of Object.entries(playerTeam)) {
+          if (!value.used) {
+            return;
+          }
+        }
+        turnInfo.team = "enemy";
+        setTurnInfo({ ...turnInfo });
+    }
+  }
+
   const debounceDrawPath = debounce(async (e) => {
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
@@ -547,10 +578,16 @@ const GrassCanvas = (props) => {
 
   //only first render
   useEffect(() => {
+    if (turnInfo.turnNum === 0) {
+      turnInfo.team = startingTeam;
+      setTurnInfo({ ...turnInfo });
+    }
+    if (mode.movement.active) {
+      endMovement();
+    }
     setFirstRender(false);
     if (!mode.battle.active) {
       setCurrentChar({});
-      activateTeamSelection();
 
       for (const [key] of Object.entries(activeRoster)) {
         const teamSelectIcon = document.getElementById(key);
@@ -565,8 +602,6 @@ const GrassCanvas = (props) => {
     if (firstRender) {
       return;
     }
-
-    //console.log("rerender or sumn");
 
     mapImage.onload = () => {
       canvas.width = mapImage.width;
@@ -827,16 +862,15 @@ const GrassCanvas = (props) => {
           </button>
         </div>
         <div className="col-md-auto">
-          <button className="btn reset-button" onClick={() => resetMode()}>
-            Reset Mode
+          <button className="btn reset-button" onClick={() => resetGame()}>
+            Reset Game
           </button>
         </div>
         <div className="col-md-auto">
           <button
             className="btn reset-button"
             onClick={() => {
-              deactivateTeamSelection();
-              activateBattle();
+              startGame();
             }}
           >
             Start Game
@@ -890,9 +924,14 @@ const GrassCanvas = (props) => {
             ) : null}
             <div>
               {mode.battle.active && !mode.teamSelection.active ? (
-                <button onClick={() => console.log(playerTeam)}>
-                  playerTeam
-                </button>
+                <div>
+                  <button onClick={() => console.log(playerTeam)}>
+                    playerTeam
+                  </button>
+                  <button onClick={() => console.log(turnInfo)}>
+                    turnInfo
+                  </button>
+                </div>
               ) : null}
             </div>
           </div>

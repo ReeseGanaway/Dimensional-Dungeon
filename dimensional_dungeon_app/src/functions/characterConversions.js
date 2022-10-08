@@ -52,6 +52,6 @@ export function playerTeamToActiveRoster(playerTeam, roster) {
     };
     newTeam = { ...newTeam, [newChar.id]: newChar };
   }
-  console.log(newTeam);
+
   return newTeam;
 }

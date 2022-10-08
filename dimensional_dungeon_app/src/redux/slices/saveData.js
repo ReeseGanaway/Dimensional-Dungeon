@@ -8,9 +8,13 @@ export const saveData = createSlice({
   initialState: initSave,
   reducers: {
     setSave(state, action) {
+      console.log({
+        ...state,
+        maps: { ...state.maps, [action.payload.map]: action.payload.save },
+      });
       return {
         ...state,
-        maps: { ...state.maps[action.map], [action.map]: action.save },
+        maps: { ...state.maps, [action.payload.map]: action.payload.save },
       };
     },
     clearSave() {
