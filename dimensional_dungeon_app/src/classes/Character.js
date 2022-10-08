@@ -29,6 +29,10 @@ export class Character {
     let canvas = document.getElementById("canvas");
     let context = canvas.getContext("2d");
 
+    if (this.used) {
+      context.filter = "grayscale(1)";
+    }
+
     switch (this.dir) {
       case "down":
         if (this.step > 0 && this.step < 24) {
@@ -187,11 +191,11 @@ export class Character {
         }
         break;
     }
+    context.filter = "grayscale(0)";
   }
 
   //update the characters current position
   updatePos(newX, newY) {
-    console.log(newX, newY);
     this.position.x = newX;
     this.position.y = newY;
     if (this.step === 47) {

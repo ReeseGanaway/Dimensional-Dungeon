@@ -99,6 +99,7 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
       let neighbors = current.neighbors;
       for (let i = 0; i < neighbors.length; i++) {
         var neighbor = neighbors[i];
+
         if (!closedSet.includes(neighbor)) {
           let tempG = current.g + 1;
 

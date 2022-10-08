@@ -186,16 +186,20 @@ const GrassCanvas = (props) => {
 
       //if user has selected a hero that is already on the canvas, but they want to move it
       else if (
-        Object.keys(currentChar).length === 0 &&
+        Object.keys(currentChar).length !== 0 &&
         checkTileForHero(x, y, playerTeam)
       ) {
         moveCharDuringTeamSelect(checkTileForHero(x, y, playerTeam));
       }
     } else if (mode.battle.active) {
-      //movement mode is active (last click was a click on an ally character)
-      if (mode.movement.active) {
-        if (!currentChar.waiting || currentChar.waiting) {
+      //there is currently a current character/ a character is active
+      if (Object.keys(currentChar).length !== 0) {
+        //if current character has not been assigned an action
+        if (!currentChar.waiting) {
+          //if there is no character on the tile that was clicked
+
           if (!checkTileForHero(x, y, playerTeam)) {
+            //and the tile is within character range, move character
             if (
               manhattanDist(
                 currentChar.position.x,
@@ -206,12 +210,18 @@ const GrassCanvas = (props) => {
               )
             ) {
               moveCharacter(x, y);
-            } else {
+            }
+            //if the click is outside the range, deselect the current character
+            else {
               setCurrentChar({});
               endMovement();
             }
-          } else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
+          }
+          //if the tile that was clicked contains the current character
+          else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
             endMovement();
+            currentChar.toggleUsed();
+            setPlayerTeam({ ...playerTeam });
             setCurrentChar({});
             setOpenSet({});
           } else {
@@ -227,7 +237,22 @@ const GrassCanvas = (props) => {
               )
             );
           }
-        } else {
+        }
+        //character was already given a action and is waiting for confirmation
+        else if (currentChar.waiting) {
+          if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
+            currentChar.toggleWaiting();
+
+            currentChar.toggleUsed();
+            currentChar.updatePrevPos(
+              currentChar.position.x,
+              currentChar.position.y
+            );
+            setPlayerTeam({ ...playerTeam });
+            setCurrentChar({});
+
+            setOpenSet({});
+          }
         }
       }
       //if we arent in movement mode...
@@ -340,13 +365,15 @@ const GrassCanvas = (props) => {
     char.toggleWaiting();
     setPlayerTeam({ ...playerTeam });
 
-    setOpenSet({});
+    //setOpenSet({});
 
     //turn off movement mode
     endMovement();
 
-    setCurrentChar({});
-    path = null;
+    //setCurrentChar({});
+    console.log(currentChar.waiting);
+    console.log(path);
+    //path = null;
   }
 
   function getDirection(prev, curr) {
@@ -362,7 +389,7 @@ const GrassCanvas = (props) => {
   }
 
   function simulateMovement(pathArray) {
-    const char = playerTeam[currentChar.id];
+    const char = currentChar;
     let countTo48 = 0;
 
     if (pathArray.length === 1) {
@@ -867,7 +894,10 @@ const GrassCanvas = (props) => {
                     <h5>{currentChar.name}</h5>
                   </div>
                   <div className="col-md-auto current-hero-display-icon">
-                    <img src={currentChar.icon} />
+                    <img
+                      src={currentChar.icon}
+                      style={{ filter: "grayscale(100%)" }}
+                    />
                   </div>
                 </div>
                 <div className="row hero-info-row">
