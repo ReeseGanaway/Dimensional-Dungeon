@@ -339,10 +339,11 @@ const GrassCanvas = (props) => {
       spriteSheet.src,
       icon,
       moveRange,
-      dir,
+
       {
         x: x,
         y: y,
+        dir: position.dir,
       },
       false
     );

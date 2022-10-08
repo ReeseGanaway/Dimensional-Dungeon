@@ -2,14 +2,14 @@ export class Character {
   step = 0;
   waiting = false;
 
-  constructor(id, name, spriteSheet, icon, moveRange, dir, position, used) {
+  constructor(id, name, spriteSheet, icon, moveRange, position, used) {
     this.id = id;
     this.name = name;
     this.spriteSheet = new Image();
     this.spriteSheet.src = spriteSheet;
     this.icon = icon;
     this.moveRange = moveRange;
-    this.dir = dir;
+
     this.position = position;
     this.previousPosition = { ...position };
     this.used = used;
@@ -33,7 +33,7 @@ export class Character {
       context.filter = "grayscale(1)";
     }
 
-    switch (this.dir) {
+    switch (this.position.dir) {
       case "down":
         if (this.step > 0 && this.step < 24) {
           context.drawImage(
@@ -212,7 +212,7 @@ export class Character {
   }
 
   setDirection(dir) {
-    this.dir = dir;
+    this.position.dir = dir;
   }
 
   toggleUsed() {
