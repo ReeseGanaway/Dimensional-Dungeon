@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initSave = {
-  maps: { grassCanvas: { turnInfo: { turnNum: 0 } } },
+  maps: { grassCanvas: { turnInfo: { turnNum: 0, team: null } } },
 };
 export const saveData = createSlice({
   name: "saveData",
@@ -12,6 +12,9 @@ export const saveData = createSlice({
         ...state,
         maps: { ...state.maps[action.map], [action.map]: action.save },
       };
+    },
+    clearSave() {
+      return initSave;
     },
   },
 });

@@ -14,6 +14,7 @@ import {
   activeRosterToPlayerTeam,
   playerTeamToActiveRoster,
 } from "../functions/characterConversions";
+import { saveDataActions } from "../redux/slices/saveData";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
@@ -27,7 +28,7 @@ const GrassCanvas = (props) => {
 
   //redux states
   const mode = useSelector((state) => state.mode);
-  //const saveData = useSelector((state) => state.saveData);
+  const saveData = useSelector((state) => state.saveData);
   const roster = useSelector((state) => state.roster);
 
   //individual data in states
@@ -64,9 +65,9 @@ const GrassCanvas = (props) => {
   const [charLimit, setCharLimit] = useState(4);
   const [openSet, setOpenSet] = useState({});
   const [destination, setDestination] = useState({});
-  // const [sessionInfo, setSessionInfo] = useState({
-  //   ...saveData["maps"][mapName],
-  // });
+  const [turnInfo, setTurnInfo] = useState({
+    ...saveData["maps"][mapName]["turnInfo"],
+  });
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -147,8 +148,8 @@ const GrassCanvas = (props) => {
     dispatch(rosterActions.addActiveChar(hero));
   };
 
-  const setPath = (path) => {
-    dispatch(modeActions.setPath(path));
+  const clearSave = () => {
+    dispatch(saveDataActions.clearSave());
   };
 
   //Make sure user meant to leave page
@@ -848,6 +849,16 @@ const GrassCanvas = (props) => {
             }}
           >
             Reset Active Heroes
+          </button>
+        </div>
+        <div className="col-md-auto">
+          <button
+            className="btn reset-active-heroes"
+            onClick={() => {
+              clearSave();
+            }}
+          >
+            Clear Save
           </button>
         </div>
       </div>
