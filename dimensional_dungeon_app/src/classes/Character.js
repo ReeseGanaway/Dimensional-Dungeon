@@ -2,17 +2,26 @@ export class Character {
   step = 0;
   waiting = false;
 
-  constructor(id, name, spriteSheet, icon, moveRange, position, used) {
+  constructor(
+    id,
+    name,
+    spriteSheet,
+    icon,
+    position,
+    used,
+    maxStats,
+    currentStats = maxStats
+  ) {
     this.id = id;
     this.name = name;
     this.spriteSheet = new Image();
     this.spriteSheet.src = spriteSheet;
     this.icon = icon;
-    this.moveRange = moveRange;
-
     this.position = position;
     this.previousPosition = { ...position };
     this.used = used;
+    this.maxStats = maxStats;
+    this.currentStats = { ...currentStats };
   }
 
   draw() {

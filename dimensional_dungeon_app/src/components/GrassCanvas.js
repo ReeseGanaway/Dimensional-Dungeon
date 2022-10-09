@@ -221,7 +221,7 @@ const GrassCanvas = (props) => {
                 currentChar.position.y,
                 destination.x,
                 destination.y,
-                currentChar.moveRange
+                currentChar.currentStats.moveRange
               )
             ) {
               moveCharacter(x, y);
@@ -250,7 +250,7 @@ const GrassCanvas = (props) => {
                 playerTeam[key].position.y,
                 10,
                 10,
-                playerTeam[key].moveRange
+                playerTeam[key].currentStats.moveRange
               )
             );
           }
@@ -302,7 +302,7 @@ const GrassCanvas = (props) => {
                 position.y,
                 10,
                 10,
-                playerTeam[key].moveRange
+                playerTeam[key].currentStats.moveRange
               )
             );
 
@@ -334,16 +334,15 @@ const GrassCanvas = (props) => {
   }
 
   function moveCharDuringTeamSelect(id) {
-    const { name, spriteSheet, icon, moveRange, dir, position } =
-      playerTeam[id];
+    const { name, spriteSheet, icon, position, maxStats } = playerTeam[id];
     const tempCurr = new Character(
       id,
       name,
       spriteSheet.src,
       icon,
-      moveRange,
-      dir,
-      position
+      position,
+      false,
+      maxStats
     );
     setCurrentChar(tempCurr);
     delete playerTeam[id];
@@ -355,21 +354,19 @@ const GrassCanvas = (props) => {
   function setNewHero(x, y) {
     x = x - (x % 48);
     y = y - (y % 48);
-    const { id, name, spriteSheet, icon, moveRange, dir, position } =
-      currentChar;
+    const { id, name, spriteSheet, icon, position, maxStats } = currentChar;
     const tempCurr = new Character(
       id,
       name,
       spriteSheet.src,
       icon,
-      moveRange,
-
       {
         x: x,
         y: y,
         dir: position.dir,
       },
-      false
+      false,
+      maxStats
     );
 
     const newTeam = { ...playerTeam, [tempCurr.id]: tempCurr };
@@ -644,7 +641,7 @@ const GrassCanvas = (props) => {
             10,
             currentChar.position.x / 48,
             currentChar.position.y / 48,
-            currentChar.moveRange,
+            currentChar.currentStats.moveRange,
             destination,
             canvasRef.current.getContext("2d")
           );
