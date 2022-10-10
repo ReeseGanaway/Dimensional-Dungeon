@@ -1,9 +1,9 @@
 import { manhattanDist } from "../functions/manhattanDist";
 
-function Astar(rows, cols, startX, startY, movement, destination, canvas) {
+function Astar(rows, cols, startX, startY, moveRange, destination) {
   let newDest = {
-    x: (destination.x - (destination.x % 48)) / 48,
-    y: (destination.y - (destination.y % 48)) / 48,
+    x: destination.x - (destination.x % 48),
+    y: destination.y - (destination.y % 48),
   };
   destination = { ...destination, ...newDest };
 
@@ -74,7 +74,7 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
 
   start = grid[startX][startY];
 
-  end = grid[destination.x][destination.y];
+  end = grid[destination.x / 48][destination.y / 48];
 
   openSet.push(start);
 
@@ -90,7 +90,16 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
       }
       var current = openSet[winner];
 
-      if (current === end) {
+      if (
+        !manhattanDist(
+          startX * 48,
+          startY * 48,
+          current.i * 48,
+          current.j * 48,
+          moveRange
+        )
+      ) {
+        break;
       }
 
       removeFromArray(openSet, current);
@@ -125,22 +134,35 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
   //create the path that we will return to main canvas component
   path = [];
   let temp = current;
-  path.push(temp);
-  objectPath = {
-    ...objectPath,
-    [[`${temp.i * 48},${temp.j * 48}`]]: { x: temp.i * 48, y: temp.j * 48 },
-  };
-  //while there are still tiles to be added
-  //and the destination is within character's range
-  while (
-    temp.previous &&
+  if (
     manhattanDist(
       startX * 48,
       startY * 48,
-      destination.x * 48,
-      destination.y * 48,
-      movement
+      current.i * 48,
+      current.j * 48,
+      moveRange
     )
+  ) {
+    //path.push(temp);
+    objectPath = {
+      ...objectPath,
+      [[`${temp.i * 48},${temp.j * 48}`]]: { x: temp.i * 48, y: temp.j * 48 },
+    };
+  }
+
+  //while there are still tiles to be added
+  //and the destination is within character's range
+
+  while (
+    temp.previous
+    // &&
+    // manhattanDist(
+    //   startX * 48,
+    //   startY * 48,
+    //   destination.x,
+    //   destination.y,
+    //   moveRange
+    //)
   ) {
     path.push(temp.previous);
     objectPath = {
@@ -150,6 +172,7 @@ function Astar(rows, cols, startX, startY, movement, destination, canvas) {
         y: temp.previous.j * 48,
       },
     };
+
     temp = temp.previous;
   }
 

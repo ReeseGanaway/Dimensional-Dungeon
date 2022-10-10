@@ -62,6 +62,7 @@ const GrassCanvas = (props) => {
   );
 
   const [currentChar, setCurrentChar] = useState({});
+  const [currentEnemy, setCurrentEnemy] = useState({});
   const [firstRender, setFirstRender] = useState(true);
   const [charLimit, setCharLimit] = useState(4);
   const [openSet, setOpenSet] = useState({});
@@ -153,6 +154,7 @@ const GrassCanvas = (props) => {
     resetActiveRoster();
     resetMode();
     setPlayerTeam({});
+    setEnemyTeam({});
     turnInfo.turnNum = 0;
     turnInfo.team = startingTeam;
     setTurnInfo({ ...turnInfo });
@@ -383,7 +385,7 @@ const GrassCanvas = (props) => {
     if (path) {
       let pathArray = Object.entries(path).reverse();
       char.updatePrevPos(char.position.x, char.position.y, char.position.dir);
-      simulateMovement(pathArray);
+      simulateAllyMovement(pathArray);
     }
 
     //set current character to waiting
@@ -406,7 +408,7 @@ const GrassCanvas = (props) => {
     }
   }
 
-  function simulateMovement(pathArray) {
+  function simulateAllyMovement(pathArray) {
     const char = currentChar;
     let countTo48 = 0;
 
@@ -428,7 +430,7 @@ const GrassCanvas = (props) => {
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
 
@@ -448,7 +450,7 @@ const GrassCanvas = (props) => {
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
       //character is moving down
@@ -467,7 +469,7 @@ const GrassCanvas = (props) => {
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
 
@@ -487,7 +489,105 @@ const GrassCanvas = (props) => {
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
+        }, 10 * countTo48);
+      }
+    }
+  }
+
+  function simulateEnemyMovement(pathArray) {
+    const char = currentEnemy;
+    let countTo48 = 0;
+
+    if (pathArray.length === 1) {
+      currentEnemy.toggleUsed();
+      setEnemyTeam({ ...enemyTeam });
+      for (const [key, value] of Object.entries(enemyTeam)) {
+        if (!value.used) {
+          setCurrentEnemy(enemyTeam[key]);
+          return;
+        }
+      }
+      console.log("turning to ally");
+
+      incrementTurn();
+    } else {
+      //character is moving right
+      if (pathArray[0][1].x < pathArray[1][1].x) {
+        while (pathArray[0][1].x + countTo48 < pathArray[1][1].x) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x + 1, char.position.y);
+            char.setDirection("right");
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+
+      //character is moving left
+      else if (pathArray[0][1].x > pathArray[1][1].x) {
+        while (pathArray[0][1].x - countTo48 > pathArray[1][1].x) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x - 1, char.position.y);
+            char.setDirection("left");
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+      //character is moving down
+      else if (pathArray[0][1].y < pathArray[1][1].y) {
+        while (pathArray[0][1].y + countTo48 < pathArray[1][1].y) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x, char.position.y + 1);
+            char.setDirection("down");
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+
+      //character is moving up
+      else if (pathArray[0][1].y > pathArray[1][1].y) {
+        char.setDirection("up");
+        while (pathArray[0][1].y - countTo48 > pathArray[1][1].y) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x, char.position.y - 1);
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
         }, 10 * countTo48);
       }
     }
@@ -501,8 +601,30 @@ const GrassCanvas = (props) => {
             return;
           }
         }
+        for (const [key, value] of Object.entries(playerTeam)) {
+          playerTeam[key].toggleUsed();
+        }
+
+        console.log("num++");
+
+        setCurrentEnemy(Object.entries(enemyTeam)[0][1]);
+        if (turnInfo.team !== startingTeam) turnInfo.turnNum++;
         turnInfo.team = "enemy";
         setTurnInfo({ ...turnInfo });
+        break;
+      case "enemy":
+        for (const [key, value] of Object.entries(enemyTeam)) {
+          if (!value.used) {
+            return;
+          }
+          if (turnInfo.team !== startingTeam) turnInfo.turnNum++;
+          turnInfo.team = "ally";
+          setTurnInfo({ ...turnInfo });
+          setCurrentEnemy({});
+          for (const [key, value] of Object.entries(enemyTeam)) {
+            enemyTeam[key].toggleUsed();
+          }
+        }
     }
   }
 
@@ -642,8 +764,7 @@ const GrassCanvas = (props) => {
             currentChar.position.x / 48,
             currentChar.position.y / 48,
             currentChar.currentStats.moveRange,
-            destination,
-            canvasRef.current.getContext("2d")
+            destination
           );
 
           let pathArray = Object.entries(path).reverse();
@@ -844,6 +965,29 @@ const GrassCanvas = (props) => {
     };
   }, [mapImage, mode.teamSelection.active]);
 
+  useEffect(() => {
+    if (turnInfo.team === "enemy") {
+      let highestDmg = Object.entries(playerTeam)[0][1];
+      for (const [key, value] of Object.entries(playerTeam)) {
+        if (value.maxStats.dmg > highestDmg.maxStats.dmg) {
+          highestDmg = playerTeam[key];
+        }
+      }
+
+      path = astar(
+        10,
+        10,
+        currentEnemy.position.x / 48,
+        currentEnemy.position.y / 48,
+        currentEnemy.currentStats.moveRange,
+        highestDmg.position
+      );
+      let pathArray = Object.entries(path).reverse();
+
+      simulateEnemyMovement(pathArray);
+    }
+  }, [turnInfo, currentEnemy]);
+
   return (
     <div className="container-lg">
       <div className="row justify-content-center reset-redux-states">
@@ -871,17 +1015,6 @@ const GrassCanvas = (props) => {
             }}
           >
             Start Game
-          </button>
-        </div>
-        <div className="col-md-auto">
-          <button
-            className="btn reset-active-heroes"
-            onClick={() => {
-              resetActiveRoster();
-              setPlayerTeam({});
-            }}
-          >
-            Reset Active Heroes
           </button>
         </div>
         <div className="col-md-auto">
