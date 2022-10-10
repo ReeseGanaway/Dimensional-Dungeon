@@ -37,23 +37,14 @@ export function convertToChar(hero, defaultDir) {
 export function playerTeamToActiveRoster(playerTeam, roster) {
   let newTeam = {};
   for (const [key, value] of Object.entries(playerTeam)) {
-    const {
-      id,
-      name,
-      icon,
-      moveRange,
-      previousPosition,
-      used,
-      maxStats,
-      currentStats,
-    } = value;
+    const { id, name, icon, previousPosition, used, maxStats, currentStats } =
+      value;
 
     const newChar = {
       id: id,
       name: name,
       spriteSheet: roster.collection[id].spriteSheet,
       icon: icon,
-      moveRange: moveRange,
       dir: previousPosition.dir,
       x: previousPosition.x,
       y: previousPosition.y,

@@ -42,24 +42,33 @@ const GrassCanvas = (props) => {
   const [playerTeam, setPlayerTeam] = useState(
     activeRosterToPlayerTeam(activeRoster)
   );
-  const [enemyTeam, setEnemyTeam] = useState(
-    activeRosterToPlayerTeam({
-      penguin: {
-        ...collection["penguin"],
-        x: 432,
-        y: 432,
-        dir: "up",
-        used: false,
-      },
-      twoFace: {
-        ...collection["twoFace"],
-        x: 384,
-        y: 432,
-        dir: "up",
-        used: false,
-      },
-    })
-  );
+
+  const [enemyTeam, setEnemyTeam] = useState(() => {
+    if (Object.keys(saveData.maps[mapName].enemyTeam).length === 0) {
+      return activeRosterToPlayerTeam({
+        penguin: {
+          ...collection["penguin"],
+          x: 432,
+          y: 432,
+          dir: "up",
+          used: false,
+        },
+        twoFace: {
+          ...collection["twoFace"],
+          x: 384,
+          y: 432,
+          dir: "up",
+          used: false,
+        },
+      });
+    } else {
+      return activeRosterToPlayerTeam(saveData.maps[mapName].enemyTeam);
+    }
+  });
+
+  // const [enemyTeam, setEnemyTeam] = useState(
+  //   activeRosterToPlayerTeam(saveData.maps[mapName].enemyTeam)
+  // );
 
   const [currentChar, setCurrentChar] = useState({});
   const [currentEnemy, setCurrentEnemy] = useState({});
@@ -170,9 +179,15 @@ const GrassCanvas = (props) => {
   //Make sure user meant to leave page
   window.onbeforeunload = function () {
     console.log("Would you like to save your game?");
-    console.log(playerTeamToActiveRoster(playerTeam, roster));
     setActiveRoster(playerTeamToActiveRoster(playerTeam, roster));
-    setSave({ map: mapName, save: { turnInfo: turnInfo } });
+
+    setSave({
+      map: mapName,
+      save: {
+        turnInfo: turnInfo,
+        enemyTeam: playerTeamToActiveRoster(enemyTeam, roster),
+      },
+    });
     return "Would you like to save your game?";
   };
 
@@ -501,6 +516,11 @@ const GrassCanvas = (props) => {
 
     if (pathArray.length === 1) {
       currentEnemy.toggleUsed();
+      currentEnemy.updatePrevPos(
+        currentEnemy.position.x,
+        currentEnemy.position.y,
+        currentEnemy.position.dir
+      );
       setEnemyTeam({ ...enemyTeam });
       for (const [key, value] of Object.entries(enemyTeam)) {
         if (!value.used) {
@@ -508,7 +528,6 @@ const GrassCanvas = (props) => {
           return;
         }
       }
-      console.log("turning to ally");
 
       incrementTurn();
     } else {
@@ -604,8 +623,6 @@ const GrassCanvas = (props) => {
         for (const [key, value] of Object.entries(playerTeam)) {
           playerTeam[key].toggleUsed();
         }
-
-        console.log("num++");
 
         setCurrentEnemy(Object.entries(enemyTeam)[0][1]);
         if (turnInfo.team !== startingTeam) turnInfo.turnNum++;
@@ -963,7 +980,7 @@ const GrassCanvas = (props) => {
         }
       }
     };
-  }, [mapImage, mode.teamSelection.active]);
+  }, [mapImage, mode.teamSelection.active, enemyTeam]);
 
   useEffect(() => {
     if (turnInfo.team === "enemy") {
@@ -1057,6 +1074,9 @@ const GrassCanvas = (props) => {
                 <div>
                   <button onClick={() => console.log(playerTeam)}>
                     playerTeam
+                  </button>
+                  <button onClick={() => console.log(enemyTeam)}>
+                    enemyTeam
                   </button>
                   <button onClick={() => console.log(turnInfo)}>
                     turnInfo
