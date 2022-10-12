@@ -11,7 +11,7 @@ const App = () => {
     <BrowserRouter>
       <Fragment>
         <Routes>
-          <Route path="/" element={<Interface />}></Route>
+          <Route path="/" element={<GrassCanvas />}></Route>
           <Route path="/rostercreator" element={<RosterCreation />}></Route>
           <Route path="/game" element={<GrassCanvas />}></Route>
           <Route path="/game2" element={<Canvas2 />}></Route>
