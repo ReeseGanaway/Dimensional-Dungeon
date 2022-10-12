@@ -11,10 +11,12 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
+import { saveData } from "../slices/saveData";
 
 const reducers = combineReducers({
-  roster: roster.reducer,
   mode: mode.reducer,
+  roster: roster.reducer,
+  saveData: saveData.reducer,
 });
 
 const rootReducer = (state, action) => {

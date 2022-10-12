@@ -7,17 +7,20 @@ import TeamSelection from "./TeamSelection";
 import astar from "./astar";
 import checkTileForHero from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
-import { debounce, times } from "lodash";
+import { debounce } from "lodash";
 import { manhattanDist } from "../functions/manhattanDist";
 import { Character } from "../classes/Character";
 import {
   activeRosterToPlayerTeam,
   playerTeamToActiveRoster,
 } from "../functions/characterConversions";
+import { saveDataActions } from "../redux/slices/saveData";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
+  const mapName = "grassCanvas";
+  const startingTeam = "ally";
   let direction;
   let defaultDir = "down";
   let path;
@@ -25,28 +28,54 @@ const GrassCanvas = (props) => {
   //redux state variables
 
   //redux states
-  const roster = useSelector((state) => state.roster);
   const mode = useSelector((state) => state.mode);
+  const saveData = useSelector((state) => state.saveData);
+  const roster = useSelector((state) => state.roster);
 
   //individual data in states
 
-  const activeRoster = roster.activeRoster;
   const collection = roster.collection;
 
   const dispatch = useDispatch();
 
+  const [moving, setMoving] = useState(false);
+
   const [playerTeam, setPlayerTeam] = useState(
-    activeRosterToPlayerTeam(activeRoster)
+    activeRosterToPlayerTeam(saveData.maps[mapName].allyTeam)
   );
-  const [enemyTeam, setEnemyTeam] =
-    useState();
-    //activeRosterToPlayerTeam(activeRoster)
+
+  const [enemyTeam, setEnemyTeam] = useState(() => {
+    if (Object.keys(saveData.maps[mapName].enemyTeam).length === 0) {
+      return activeRosterToPlayerTeam({
+        penguin: {
+          ...collection["penguin"],
+          x: 432,
+          y: 432,
+          dir: "up",
+          used: false,
+        },
+        twoFace: {
+          ...collection["twoFace"],
+          x: 384,
+          y: 432,
+          dir: "up",
+          used: false,
+        },
+      });
+    } else {
+      return activeRosterToPlayerTeam(saveData.maps[mapName].enemyTeam);
+    }
+  });
+
   const [currentChar, setCurrentChar] = useState({});
+  const [currentEnemy, setCurrentEnemy] = useState({});
   const [firstRender, setFirstRender] = useState(true);
   const [charLimit, setCharLimit] = useState(4);
-  const [pathState, setPathState] = useState([]);
   const [openSet, setOpenSet] = useState({});
-  const [lDest, setLDest] = useState({});
+  const [destination, setDestination] = useState({});
+  const [turnInfo, setTurnInfo] = useState({
+    ...saveData["maps"][mapName]["turnInfo"],
+  });
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -63,10 +92,6 @@ const GrassCanvas = (props) => {
     dispatch(rosterActions.updateXY(newPosition));
   };
 
-  // const clearRoster = () => {
-  //   dispatch(rosterActions.clearRoster());
-  // };
-
   const resetRoster = () => {
     dispatch(rosterActions.resetRoster());
   };
@@ -80,6 +105,7 @@ const GrassCanvas = (props) => {
   };
 
   const resetMode = () => {
+    setOpenSet({});
     dispatch(modeActions.resetMode());
   };
 
@@ -103,47 +129,67 @@ const GrassCanvas = (props) => {
     dispatch(modeActions.deactivateBattle());
   };
 
-  const setSelectedHero = (hero) => {
-    if (hero == null) {
-      setOpenSet(null);
-    }
-    //we can reset the destination
-    //because there should never be a destination if a new hero is selected
-    setDestination({ x: null, y: null });
-    dispatch(modeActions.setSelectedHero(hero));
+  const clearSave = () => {
+    dispatch(saveDataActions.clearSave());
   };
 
-  const resetActiveRoster = () => {
-    for (const [key, value] of Object.entries(activeRoster)) {
+  const setSave = (sessionInfo) => {
+    dispatch(saveDataActions.setSave(sessionInfo));
+  };
+
+  function resetGame() {
+    clearSave();
+    resetMode();
+    turnInfo.turnNum = 0;
+    turnInfo.team = startingTeam;
+    setTurnInfo({ ...turnInfo });
+    setPlayerTeam({});
+    setEnemyTeam(
+      activeRosterToPlayerTeam({
+        penguin: {
+          ...collection["penguin"],
+          x: 432,
+          y: 432,
+          dir: "up",
+          used: false,
+        },
+        twoFace: {
+          ...collection["twoFace"],
+          x: 384,
+          y: 432,
+          dir: "up",
+          used: false,
+        },
+      })
+    );
+
+    for (const [key, value] of Object.entries(playerTeam)) {
       if (mode.teamSelection.active) {
         const teamSelectIcon = document.getElementById(key);
         teamSelectIcon.className = "";
       }
     }
-    dispatch(rosterActions.resetActiveRoster());
-  };
+  }
 
-  const setActiveRoster = (newTeam) => {
-    dispatch(rosterActions.setActiveRoster(newTeam));
-  };
-
-  const addActiveChar = (hero) => {
-    dispatch(rosterActions.addActiveChar(hero));
-  };
-
-  const setDestination = (destination) => {
-    dispatch(modeActions.setDestination(destination));
-  };
-
-  const setPath = (path) => {
-    dispatch(modeActions.setPath(path));
-  };
+  function startGame() {
+    deactivateTeamSelection();
+    activateBattle();
+    turnInfo.turnNum = 1;
+    setTurnInfo({ ...turnInfo });
+  }
 
   //Make sure user meant to leave page
   window.onbeforeunload = function () {
     console.log("Would you like to save your game?");
-    console.log(playerTeamToActiveRoster(playerTeam, roster));
-    setActiveRoster(playerTeamToActiveRoster(playerTeam, roster));
+
+    setSave({
+      map: mapName,
+      save: {
+        turnInfo: turnInfo,
+        enemyTeam: playerTeamToActiveRoster(enemyTeam, roster),
+        allyTeam: playerTeamToActiveRoster(playerTeam, roster),
+      },
+    });
     return "Would you like to save your game?";
   };
 
@@ -174,45 +220,88 @@ const GrassCanvas = (props) => {
 
       //if user has selected a hero that is already on the canvas, but they want to move it
       else if (
-        Object.keys(currentChar).length === 0 &&
+        Object.keys(currentChar).length !== 0 &&
         checkTileForHero(x, y, playerTeam)
       ) {
         moveCharDuringTeamSelect(checkTileForHero(x, y, playerTeam));
       }
     } else if (mode.battle.active) {
-      //movement mode is active (last click was a click on an ally character)
-      if (mode.movement.active) {
-        if (!checkTileForHero(x, y, playerTeam)) {
-          if (
-            manhattanDist(
+      //there is currently a current character/ a character is active
+      if (Object.keys(currentChar).length !== 0) {
+        //if current character has not been assigned an action
+        if (!currentChar.waiting) {
+          //if there is no character on the tile that was clicked
+
+          if (!checkTileForHero(x, y, playerTeam)) {
+            //and the tile is within character range, move character
+            if (
+              Object.keys(openSet).includes(`${x - (x % 48)},${y - (y % 48)}`)
+              // manhattanDist(
+              //   currentChar.position.x,
+              //   currentChar.position.y,
+              //   destination.x,
+              //   destination.y,
+              //   currentChar.currentStats.moveRange
+              // )
+            ) {
+              moveCharacter(x, y);
+            }
+            //if the click is outside the range, deselect the current character
+            else {
+              setCurrentChar({});
+              endMovement();
+              setOpenSet({});
+            }
+          }
+          //if the tile that was clicked contains the current character
+          else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
+            endMovement();
+            currentChar.toggleUsed();
+            setPlayerTeam({ ...playerTeam });
+            setCurrentChar({});
+            setOpenSet({});
+            incrementTurn();
+            setTurnInfo({ ...turnInfo });
+          } else {
+            let key = checkTileForHero(x, y, playerTeam);
+            setCurrentChar(playerTeam[key]);
+            setOpenSet(
+              tilesInMoveRange(
+                playerTeam[key].position.x,
+                playerTeam[key].position.y,
+                10,
+                10,
+                playerTeam[key].currentStats.moveRange,
+                playerTeam,
+                enemyTeam
+              )
+            );
+          }
+        }
+        //character was already given a action and is waiting for confirmation
+        else if (currentChar.waiting) {
+          //if tile clicked contains currentChar
+          if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
+            currentChar.toggleWaiting();
+
+            currentChar.toggleUsed();
+            currentChar.updatePrevPos(
               currentChar.position.x,
               currentChar.position.y,
-              lDest.x,
-              lDest.y,
-              currentChar.moveRange
-            )
-          ) {
-            moveCharacter(x, y);
-          } else {
+              currentChar.position.dir
+            );
+            setPlayerTeam({ ...playerTeam });
             setCurrentChar({});
-            endMovement();
+            setOpenSet({});
+            incrementTurn();
+          } else if (checkTileForHero(x, y, playerTeam) === null) {
+            currentChar.revertPos();
+            currentChar.toggleWaiting();
+            setPlayerTeam({ ...playerTeam });
+            setDestination({});
+            setCurrentChar({});
+            setOpenSet({});
           }
-        } else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
-          endMovement();
-          setCurrentChar({});
-          setOpenSet({});
-        } else {
-          let key = checkTileForHero(x, y, playerTeam);
-          setCurrentChar(playerTeam[key]);
-          setOpenSet(
-            tilesInMoveRange(
-              playerTeam[key].position.x,
-              playerTeam[key].position.y,
-              10,
-              10,
-              playerTeam[key].moveRange
-            )
-          );
         }
       }
       //if we arent in movement mode...
@@ -228,7 +317,7 @@ const GrassCanvas = (props) => {
             y <= position.y + 47
           ) {
             path = null;
-            setLDest({});
+            setDestination({});
             setCurrentChar(playerTeam[key]);
             setOpenSet(
               tilesInMoveRange(
@@ -236,7 +325,9 @@ const GrassCanvas = (props) => {
                 position.y,
                 10,
                 10,
-                playerTeam[key].moveRange
+                playerTeam[key].currentStats.moveRange,
+                playerTeam,
+                enemyTeam
               )
             );
 
@@ -268,16 +359,15 @@ const GrassCanvas = (props) => {
   }
 
   function moveCharDuringTeamSelect(id) {
-    const { name, spriteSheet, icon, moveRange, dir, position } =
-      playerTeam[id];
+    const { name, spriteSheet, icon, position, maxStats } = playerTeam[id];
     const tempCurr = new Character(
       id,
       name,
       spriteSheet.src,
       icon,
-      moveRange,
-      dir,
-      position
+      position,
+      false,
+      maxStats
     );
     setCurrentChar(tempCurr);
     delete playerTeam[id];
@@ -289,19 +379,19 @@ const GrassCanvas = (props) => {
   function setNewHero(x, y) {
     x = x - (x % 48);
     y = y - (y % 48);
-    const { id, name, spriteSheet, icon, moveRange, dir, position } =
-      currentChar;
+    const { id, name, spriteSheet, icon, position, maxStats } = currentChar;
     const tempCurr = new Character(
       id,
       name,
       spriteSheet.src,
       icon,
-      moveRange,
-      dir,
       {
         x: x,
         y: y,
-      }
+        dir: position.dir,
+      },
+      false,
+      maxStats
     );
 
     const newTeam = { ...playerTeam, [tempCurr.id]: tempCurr };
@@ -314,18 +404,19 @@ const GrassCanvas = (props) => {
 
   //function for moving the character
   function moveCharacter(x, y) {
+    const char = playerTeam[currentChar.id];
     if (path) {
       let pathArray = Object.entries(path).reverse();
-      simulateMovement(pathArray);
+      char.updatePrevPos(char.position.x, char.position.y, char.position.dir);
+      simulateAllyMovement(pathArray);
     }
 
-    setOpenSet({});
+    //set current character to waiting
+    char.toggleWaiting();
+    setPlayerTeam({ ...playerTeam });
 
     //turn off movement mode
     endMovement();
-
-    setCurrentChar({});
-    path = null;
   }
 
   function getDirection(prev, curr) {
@@ -340,10 +431,13 @@ const GrassCanvas = (props) => {
     }
   }
 
-  function simulateMovement(pathArray) {
+  function simulateAllyMovement(pathArray) {
+    setMoving(true);
+    const char = currentChar;
     let countTo48 = 0;
 
     if (pathArray.length === 1) {
+      setMoving(false);
     } else {
       //character is moving right
       if (pathArray[0][1].x < pathArray[1][1].x) {
@@ -351,20 +445,17 @@ const GrassCanvas = (props) => {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x + 1,
-              playerTeam[currentChar.id].position.y
-            );
-            playerTeam[currentChar.id].setDirection("right");
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            char.updatePos(char.position.x + 1, char.position.y);
+            char.setDirection("right");
+
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
 
@@ -374,20 +465,17 @@ const GrassCanvas = (props) => {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x - 1,
-              playerTeam[currentChar.id].position.y
-            );
-            playerTeam[currentChar.id].setDirection("left");
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            char.updatePos(char.position.x - 1, char.position.y);
+            char.setDirection("left");
+
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
       //character is moving down
@@ -396,46 +484,174 @@ const GrassCanvas = (props) => {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x,
-              playerTeam[currentChar.id].position.y + 1
-            );
-            playerTeam[currentChar.id].setDirection("down");
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            char.updatePos(char.position.x, char.position.y + 1);
+            char.setDirection("down");
+
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
 
       //character is moving up
       else if (pathArray[0][1].y > pathArray[1][1].y) {
-        playerTeam[currentChar.id].setDirection("up");
+        char.setDirection("up");
         while (pathArray[0][1].y - countTo48 > pathArray[1][1].y) {
           const tempCountTo48 = countTo48;
 
           setTimeout(() => {
-            playerTeam[currentChar.id].updatePos(
-              playerTeam[currentChar.id].position.x,
-              playerTeam[currentChar.id].position.y - 1
-            );
+            char.updatePos(char.position.x, char.position.y - 1);
 
-            const newTeam = { ...playerTeam };
-            setPlayerTeam(newTeam);
+            setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
           countTo48++;
         }
 
         setTimeout(() => {
-          simulateMovement(pathArray.slice(1));
+          simulateAllyMovement(pathArray.slice(1));
         }, 10 * countTo48);
       }
+    }
+  }
+
+  function simulateEnemyMovement(pathArray) {
+    const char = currentEnemy;
+    let countTo48 = 0;
+
+    if (pathArray.length === 1) {
+      currentEnemy.toggleUsed();
+      currentEnemy.updatePrevPos(
+        currentEnemy.position.x,
+        currentEnemy.position.y,
+        currentEnemy.position.dir
+      );
+      setEnemyTeam({ ...enemyTeam });
+      for (const [key, value] of Object.entries(enemyTeam)) {
+        if (!value.used) {
+          setCurrentEnemy(enemyTeam[key]);
+          return;
+        }
+      }
+
+      incrementTurn();
+    } else {
+      //character is moving right
+      if (pathArray[0][1].x < pathArray[1][1].x) {
+        while (pathArray[0][1].x + countTo48 < pathArray[1][1].x) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x + 1, char.position.y);
+            char.setDirection("right");
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+
+      //character is moving left
+      else if (pathArray[0][1].x > pathArray[1][1].x) {
+        while (pathArray[0][1].x - countTo48 > pathArray[1][1].x) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x - 1, char.position.y);
+            char.setDirection("left");
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+      //character is moving down
+      else if (pathArray[0][1].y < pathArray[1][1].y) {
+        while (pathArray[0][1].y + countTo48 < pathArray[1][1].y) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x, char.position.y + 1);
+            char.setDirection("down");
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+
+      //character is moving up
+      else if (pathArray[0][1].y > pathArray[1][1].y) {
+        char.setDirection("up");
+        while (pathArray[0][1].y - countTo48 > pathArray[1][1].y) {
+          const tempCountTo48 = countTo48;
+
+          setTimeout(() => {
+            char.updatePos(char.position.x, char.position.y - 1);
+
+            setEnemyTeam({ ...enemyTeam });
+          }, 10 * tempCountTo48);
+
+          countTo48++;
+        }
+
+        setTimeout(() => {
+          simulateEnemyMovement(pathArray.slice(1), char);
+        }, 10 * countTo48);
+      }
+    }
+  }
+
+  function incrementTurn() {
+    switch (turnInfo.team) {
+      case "ally":
+        for (const [key, value] of Object.entries(playerTeam)) {
+          if (!value.used) {
+            return;
+          }
+        }
+        for (const [key, value] of Object.entries(playerTeam)) {
+          playerTeam[key].toggleUsed();
+        }
+
+        setCurrentEnemy(Object.entries(enemyTeam)[0][1]);
+        if (turnInfo.team !== startingTeam) turnInfo.turnNum++;
+        turnInfo.team = "enemy";
+        setTurnInfo({ ...turnInfo });
+        break;
+      case "enemy":
+        for (const [key, value] of Object.entries(enemyTeam)) {
+          if (!value.used) {
+            return;
+          }
+          if (turnInfo.team !== startingTeam) turnInfo.turnNum++;
+          turnInfo.team = "ally";
+          setTurnInfo({ ...turnInfo });
+          setCurrentEnemy({});
+          for (const [key, value] of Object.entries(enemyTeam)) {
+            enemyTeam[key].toggleUsed();
+          }
+        }
     }
   }
 
@@ -443,7 +659,7 @@ const GrassCanvas = (props) => {
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
     let y = e.clientY - rect.top;
-    setLDest({ x: x, y: y });
+    setDestination({ x: x, y: y });
   }, 5);
 
   async function drawPath(e) {
@@ -469,6 +685,7 @@ const GrassCanvas = (props) => {
     if (!last) {
       // draw the arrow shaft
       context.moveTo(sx, sy);
+
       context.bezierCurveTo(cx1, cy1, cx2, cy2, ex, ey);
       context.stroke();
     }
@@ -506,14 +723,360 @@ const GrassCanvas = (props) => {
     }
   }
 
+  //function to draw path of character
+  function drawFullPath(pathArray) {
+    let sx, sy, ex, ey, newDirection, prevDirection;
+
+    for (let i = 0; i < pathArray.length; i++) {
+      if (i === 0) {
+        if (pathArray.length > 1) {
+          direction = getDirection(pathArray[i][1], pathArray[i + 1][1]);
+        }
+      } else if (i === pathArray.length - 1) {
+        switch (direction) {
+          case "up":
+            sx = pathArray[i][1].x + 24;
+            sy = pathArray[i][1].y + 48;
+            drawArrow(
+              sx,
+              sy,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              true,
+              direction
+            );
+
+            break;
+          case "down":
+            sx = pathArray[i][1].x + 24;
+            sy = pathArray[i][1].y;
+            drawArrow(
+              sx,
+              sy,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              true,
+              direction
+            );
+
+            break;
+          case "left":
+            sx = pathArray[i][1].x + 48;
+            sy = pathArray[i][1].y + 24;
+
+            drawArrow(
+              sx,
+              sy,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              true,
+              direction
+            );
+
+            break;
+          case "right":
+            sx = pathArray[i][1].x;
+            sy = pathArray[i][1].y + 24;
+
+            drawArrow(
+              sx,
+              sy,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              true,
+              direction
+            );
+
+            break;
+        }
+        return;
+      } else {
+        newDirection = getDirection(pathArray[i][1], pathArray[i + 1][1]);
+        //if straight line/same direction as the previos move
+
+        if (direction === newDirection) {
+          switch (newDirection) {
+            //going up
+            case "up":
+              sx = pathArray[i][1].x + 24;
+              sy = pathArray[i][1].y + 48;
+              drawArrow(sx, sy, sx, sy - 24, sx, sy - 24, sx, sy - 48, false);
+              direction = "up";
+              break;
+            //going down
+            case "down":
+              sx = pathArray[i][1].x + 24;
+              sy = pathArray[i][1].y;
+              drawArrow(sx, sy, sx, sy + 24, sx, sy + 24, sx, sy + 48, false);
+              direction = "down";
+              break;
+            //going left
+            case "left":
+              sx = pathArray[i][1].x + 48;
+              sy = pathArray[i][1].y + 24;
+              drawArrow(sx, sy, sx - 24, sy, sx - 24, sy, sx - 48, sy, false);
+              direction = "left";
+              break;
+            //going right
+            case "right":
+              sx = pathArray[i][1].x;
+              sy = pathArray[i][1].y + 24;
+              drawArrow(sx, sy, sx + 24, sy, sx + 24, sy, sx + 48, sy, false);
+              direction = "right";
+              break;
+          }
+        }
+        //if curve/different diretion than the last move
+        else {
+          switch (newDirection) {
+            //new tile/new direction is up
+            case "up":
+              switch (direction) {
+                //last move was to the left
+                case "left":
+                  sx = pathArray[i][1].x + 48;
+                  sy = pathArray[i][1].y + 24;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx - 24,
+                    sy,
+                    sx - 24,
+                    sy,
+                    sx - 24,
+                    sy - 24,
+                    false
+                  );
+                  direction = "up";
+                  break;
+                //last move was to the right
+                case "right":
+                  sx = pathArray[i][1].x;
+                  sy = pathArray[i][1].y + 24;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx + 24,
+                    sy,
+                    sx + 24,
+                    sy,
+                    sx + 24,
+                    sy - 24,
+                    false
+                  );
+                  direction = "up";
+                  break;
+              }
+              break;
+            //new tile/new direction is down
+            case "down":
+              switch (direction) {
+                //last move was to the left
+                case "left":
+                  sx = pathArray[i][1].x + 48;
+                  sy = pathArray[i][1].y + 24;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx - 24,
+                    sy,
+                    sx - 24,
+                    sy,
+                    sx - 24,
+                    sy + 24,
+                    false
+                  );
+                  direction = "down";
+                  break;
+                //last move was to the right
+                case "right":
+                  sx = pathArray[i][1].x;
+                  sy = pathArray[i][1].y + 24;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx + 24,
+                    sy,
+                    sx + 24,
+                    sy,
+                    sx + 24,
+                    sy + 24,
+                    false
+                  );
+                  direction = "down";
+                  break;
+              }
+              break;
+            //new tile/new direction is left
+            case "left":
+              switch (direction) {
+                //last move was up
+                case "up":
+                  sx = pathArray[i][1].x + 24;
+                  sy = pathArray[i][1].y + 48;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx,
+                    sy - 24,
+                    sx,
+                    sy - 24,
+                    sx - 24,
+                    sy - 24,
+                    false
+                  );
+                  direction = "left";
+                  break;
+                //last move was to down
+                case "down":
+                  sx = pathArray[i][1].x + 24;
+                  sy = pathArray[i][1].y;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx,
+                    sy + 24,
+                    sx,
+                    sy + 24,
+                    sx - 24,
+                    sy + 24,
+                    false
+                  );
+                  direction = "left";
+                  break;
+              }
+              break;
+            //new tile/new direction is right
+            case "right":
+              switch (direction) {
+                //last move was up
+                case "up":
+                  sx = pathArray[i][1].x + 24;
+                  sy = pathArray[i][1].y + 48;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx,
+                    sy - 24,
+                    sx,
+                    sy - 24,
+                    sx + 24,
+                    sy - 24,
+                    false
+                  );
+                  direction = "right";
+                  break;
+                //last move was down
+                case "down":
+                  sx = pathArray[i][1].x + 24;
+                  sy = pathArray[i][1].y;
+                  drawArrow(
+                    sx,
+                    sy,
+                    sx,
+                    sy + 24,
+                    sx,
+                    sy + 24,
+                    sx + 24,
+                    sy + 24,
+                    false
+                  );
+                  direction = "right";
+                  break;
+              }
+              break;
+          }
+        }
+      }
+    }
+  }
+
+  function drawArrow(
+    sx,
+    sy,
+    cx1,
+    cy1,
+    cx2,
+    cy2,
+    ex,
+    ey,
+    last,
+    newDirection = null
+  ) {
+    // pathArray, index) {
+    let context = canvasRef.current.getContext("2d");
+
+    context.lineWidth = 10;
+    if (!last) {
+      // draw the arrow shaft
+      context.moveTo(sx, sy);
+
+      context.bezierCurveTo(cx1, cy1, cx2, cy2, ex, ey);
+      context.stroke();
+    }
+    // draw the arrow head
+    else {
+      var size = context.lineWidth / 1.5;
+
+      context.beginPath();
+      context.save();
+      if (newDirection === "right") {
+        context.translate(sx, sy);
+      } else if (newDirection === "left") {
+        context.translate(sx, sy);
+        context.rotate((180 * Math.PI) / 180);
+      } else if (newDirection === "up") {
+        context.translate(sx, sy);
+        context.rotate((270 * Math.PI) / 180);
+      } else if (newDirection === "down") {
+        context.translate(sx, sy);
+        context.rotate((90 * Math.PI) / 180);
+      }
+      context.fillStyle = "black";
+      context.moveTo(0, 0);
+      context.lineTo(10, 0);
+      context.stroke();
+      context.lineTo(10, -size * 2);
+      context.lineTo(size * 3 + 10, 0);
+      context.lineTo(10, size * 2);
+      context.lineTo(10, 0);
+      context.lineTo(0, 0);
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+  }
+
   //only first render
   useEffect(() => {
+    if (turnInfo.turnNum === 0) {
+      turnInfo.team = startingTeam;
+      setTurnInfo({ ...turnInfo });
+    }
+    if (mode.movement.active) {
+      endMovement();
+    }
     setFirstRender(false);
     if (!mode.battle.active) {
       setCurrentChar({});
-      activateTeamSelection();
 
-      for (const [key] of Object.entries(activeRoster)) {
+      for (const [key] of Object.entries(playerTeam)) {
         const teamSelectIcon = document.getElementById(key);
         if (teamSelectIcon !== null) {
           teamSelectIcon.className = "team-select-icon selected";
@@ -526,8 +1089,6 @@ const GrassCanvas = (props) => {
     if (firstRender) {
       return;
     }
-
-    //console.log("rerender or sumn");
 
     mapImage.onload = () => {
       canvas.width = mapImage.width;
@@ -563,199 +1124,22 @@ const GrassCanvas = (props) => {
 
       //if movement mode is active
       if (mode.movement.active) {
-        if (lDest.x && lDest.y) {
+        if (destination.x && destination.y) {
           //get the path the character would take to get to the destination
           path = astar(
             10,
             10,
             currentChar.position.x / 48,
             currentChar.position.y / 48,
-            currentChar.moveRange,
-            lDest,
-            canvasRef.current.getContext("2d")
+            currentChar.currentStats.moveRange,
+            destination,
+            playerTeam,
+            enemyTeam
           );
 
           let pathArray = Object.entries(path).reverse();
 
-          let sx, sy, ex, ey, last, newDirection, prevDirection;
-
-          //loop through the path to draw arrows
-          //showing user where the character will move
-          for (let i = 0; i < pathArray.length; i++) {
-            //since starting tile (tile character is on) arrow should not be drawn,
-            //check and make sure there is more than one tile
-            if (pathArray.length > 1) {
-              //if we are on the last tile of the path
-              if (i === pathArray.length - 1) {
-                //check directions to see if a curve needs to be drawn
-                if (direction === newDirection) {
-                  if (prevDirection == "up" && direction == "right") {
-                    sx += 24;
-                    sy = ey;
-                    prevDirection = null;
-                  } else if (prevDirection == "up" && direction == "left") {
-                    sx -= 24;
-                    sy = ey;
-                    prevDirection = null;
-                  }
-                  if (prevDirection == "down" && direction == "right") {
-                    sx += 24;
-                    sy = ey;
-                    prevDirection = null;
-                  } else if (prevDirection == "down" && direction == "left") {
-                    sx -= 24;
-                    sy = ey;
-                    prevDirection = null;
-                  }
-
-                  //draw a curve
-                  drawCurvedArrow(
-                    sx,
-                    sy,
-                    sx - (sx - ex) / 2,
-                    sy - (sy - ey) / 2,
-                    sx - (sx - ex) / 2,
-                    sy - (sy - ey) / 2,
-                    ex,
-                    ey,
-                    last,
-                    newDirection
-                  );
-                }
-                //adjust and draw arrow head
-
-                sx = pathArray[i - 1][1].x;
-                sy = pathArray[i - 1][1].y;
-                ex = pathArray[i][1].x;
-                ey = pathArray[i][1].y;
-                last = true;
-                drawCurvedArrow(
-                  sx,
-                  sy,
-                  sx - (sx - ex) / 2,
-                  sy - (sy - ey) / 2,
-                  sx - (sx - ex) / 2,
-                  sy - (sy - ey) / 2,
-                  ex,
-                  ey,
-                  last,
-                  newDirection
-                );
-              }
-              //if not on the last tile of path
-              else {
-                last = false;
-                newDirection = getDirection(
-                  pathArray[i][1],
-                  pathArray[i + 1][1]
-                );
-                if (!direction) {
-                  direction = newDirection;
-                }
-                //if we are on the first tile of the path
-                if (i === 0) {
-                  switch (direction) {
-                    case "up":
-                      sx = pathArray[i][1].x + 24;
-                      sy = pathArray[i][1].y;
-                      break;
-                    case "down":
-                      sx = pathArray[i][1].x + 24;
-                      sy = pathArray[i][1].y + 48;
-                      break;
-                    case "right":
-                      sx = pathArray[i][1].x + 48;
-                      sy = pathArray[i][1].y + 24;
-                      break;
-                    case "left":
-                      sx = pathArray[i][1].x;
-                      sy = pathArray[i][1].y + 24;
-                      break;
-                  }
-                }
-                //if the direction we are moving in has not changed from the last movement
-                //adjust how far we are moving before we need to draw the first portion of arrow
-                if (direction === newDirection) {
-                  switch (direction) {
-                    case "up":
-                      ex = pathArray[i][1].x + 24;
-                      ey = pathArray[i][1].y;
-
-                      break;
-                    case "down":
-                      ex = pathArray[i + 1][1].x + 24;
-                      ey = pathArray[i + 1][1].y;
-                      break;
-                    case "right":
-                      ex = pathArray[i][1].x + 48;
-                      ey = pathArray[i][1].y + 24;
-                      break;
-                    case "left":
-                      ex = pathArray[i + 1][1].x + 48;
-                      ey = pathArray[i + 1][1].y + 24;
-                      break;
-                  }
-                }
-                //if the direction has changed, draw the straight shaft of the arrow
-                //and depending on direction, draw a curve that leads into the arrow head
-                //may need to be adjusted when adding obstacles/tiles that cannot be moved through,
-                //as right now curves will only occur to the right or to the left after moving up or down
-                if (direction !== newDirection) {
-                  switch (newDirection) {
-                    case "up":
-                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
-
-                      break;
-                    case "down":
-                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
-                      break;
-                    case "right":
-                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
-                      sx = ex;
-                      sy = ey;
-                      if (direction === "down") {
-                        ex += 24;
-                        ey += 24;
-                      } else if (direction === "up") {
-                        ex += 24;
-                        ey -= 24;
-                      }
-
-                      drawCurvedArrow(sx, sy, sx, ey, sx, ey, ex, ey, last);
-                      prevDirection = direction;
-                      direction = null;
-                      break;
-                    case "left":
-                      drawCurvedArrow(sx, sy, sx, sy, sx, sy, ex, ey, last);
-                      sx = ex;
-                      sy = ey;
-                      if (direction === "down") {
-                        ex -= 24;
-                        ey += 24;
-                      } else if (direction === "up") {
-                        ex -= 24;
-                        ey -= 24;
-                      }
-
-                      drawCurvedArrow(
-                        sx,
-                        sy,
-                        ex + (sx - ex),
-                        ey,
-                        ex + (sx - ex),
-                        ey,
-                        ex,
-                        ey,
-                        last
-                      );
-                      prevDirection = direction;
-                      direction = null;
-                      break;
-                  }
-                }
-              }
-            }
-          }
+          drawFullPath(pathArray);
         }
       }
 
@@ -764,8 +1148,55 @@ const GrassCanvas = (props) => {
           value.draw();
         }
       }
+
+      if (Object.keys(enemyTeam).length > 0) {
+        for (const [key, value] of Object.entries(enemyTeam)) {
+          value.draw();
+        }
+      }
     };
-  }, [mapImage, mode.teamSelection.active]);
+  }, [mapImage, mode.teamSelection.active, enemyTeam]);
+
+  useEffect(() => {
+    if (turnInfo.team === "enemy") {
+      let highestDmg = Object.entries(playerTeam)[0][1];
+      for (const [key, value] of Object.entries(playerTeam)) {
+        if (value.maxStats.dmg > highestDmg.maxStats.dmg) {
+          highestDmg = playerTeam[key];
+        }
+      }
+
+      path = astar(
+        10,
+        10,
+        currentEnemy.position.x / 48,
+        currentEnemy.position.y / 48,
+        currentEnemy.currentStats.moveRange,
+        highestDmg.position,
+        playerTeam,
+        enemyTeam
+      );
+
+      let pathArray = Object.entries(path).reverse();
+
+      if (pathArray.length > 0) {
+        simulateEnemyMovement(pathArray);
+      } else {
+        currentEnemy.toggleUsed();
+
+        setEnemyTeam({ ...enemyTeam });
+        for (const [key, value] of Object.entries(enemyTeam)) {
+          if (!value.used) {
+            setCurrentEnemy(enemyTeam[key]);
+            return;
+          }
+        }
+
+        incrementTurn();
+        console.log("no path");
+      }
+    }
+  }, [turnInfo, currentEnemy]);
 
   return (
     <div className="container-lg">
@@ -782,16 +1213,15 @@ const GrassCanvas = (props) => {
           </button>
         </div>
         <div className="col-md-auto">
-          <button className="btn reset-button" onClick={() => resetMode()}>
-            Reset Mode
+          <button className="btn reset-button" onClick={() => resetGame()}>
+            Reset Game
           </button>
         </div>
         <div className="col-md-auto">
           <button
             className="btn reset-button"
             onClick={() => {
-              deactivateTeamSelection();
-              activateBattle();
+              startGame();
             }}
           >
             Start Game
@@ -801,11 +1231,10 @@ const GrassCanvas = (props) => {
           <button
             className="btn reset-active-heroes"
             onClick={() => {
-              resetActiveRoster();
-              setPlayerTeam({});
+              clearSave();
             }}
           >
-            Reset Active Heroes
+            Clear Save
           </button>
         </div>
       </div>
@@ -814,14 +1243,46 @@ const GrassCanvas = (props) => {
           <canvas
             id="canvas"
             ref={canvasRef}
-            onClick={(e) => handleClick.bind(this)(canvas, e)}
+            onClick={(e) => {
+              if (turnInfo.team === "ally" && !moving)
+                handleClick.bind(this)(canvas, e);
+            }}
             onMouseMove={(e) => {
               if (mode.movement.active) {
                 drawPath(e);
               }
             }}
           ></canvas>
+
+          <div className="row">
+            {!mode.battle.active && mode.teamSelection.active ? (
+              <TeamSelection
+                playerTeam={playerTeam}
+                setPlayerTeam={setPlayerTeam}
+                currentChar={currentChar}
+                setCurrentChar={setCurrentChar}
+                charLimit={charLimit}
+                defaultDir={defaultDir}
+              />
+            ) : null}
+            <div>
+              {mode.battle.active && !mode.teamSelection.active ? (
+                <div>
+                  <button onClick={() => console.log(playerTeam)}>
+                    playerTeam
+                  </button>
+                  <button onClick={() => console.log(enemyTeam)}>
+                    enemyTeam
+                  </button>
+                  <button onClick={() => console.log(turnInfo)}>
+                    turnInfo
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
+
         <div id="hero-info" className="hero-info col-4">
           <div className="row">
             {Object.keys(currentChar).length > 0 ? (
@@ -861,19 +1322,6 @@ const GrassCanvas = (props) => {
             )}
           </div>
         </div>
-      </div>
-      <div className="row">
-        <div className="col"></div>
-        {!mode.battle.active && mode.teamSelection.active ? (
-          <TeamSelection
-            playerTeam={playerTeam}
-            setPlayerTeam={setPlayerTeam}
-            currentChar={currentChar}
-            setCurrentChar={setCurrentChar}
-            charLimit={charLimit}
-            defaultDir={defaultDir}
-          />
-        ) : null}
       </div>
     </div>
   );

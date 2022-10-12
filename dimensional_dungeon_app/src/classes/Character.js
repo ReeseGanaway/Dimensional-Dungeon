@@ -1,15 +1,27 @@
 export class Character {
   step = 0;
+  waiting = false;
 
-  constructor(id, name, spriteSheet, icon, moveRange, dir, position) {
+  constructor(
+    id,
+    name,
+    spriteSheet,
+    icon,
+    position,
+    used,
+    maxStats,
+    currentStats = maxStats
+  ) {
     this.id = id;
     this.name = name;
     this.spriteSheet = new Image();
     this.spriteSheet.src = spriteSheet;
     this.icon = icon;
-    this.moveRange = moveRange;
-    this.dir = dir;
     this.position = position;
+    this.previousPosition = { ...position };
+    this.used = used;
+    this.maxStats = maxStats;
+    this.currentStats = { ...currentStats };
   }
 
   draw() {
@@ -26,7 +38,11 @@ export class Character {
     let canvas = document.getElementById("canvas");
     let context = canvas.getContext("2d");
 
-    switch (this.dir) {
+    if (this.used) {
+      context.filter = "grayscale(1)";
+    }
+
+    switch (this.position.dir) {
       case "down":
         if (this.step > 0 && this.step < 24) {
           context.drawImage(
@@ -184,8 +200,10 @@ export class Character {
         }
         break;
     }
+    context.filter = "grayscale(0)";
   }
 
+  //update the characters current position
   updatePos(newX, newY) {
     this.position.x = newX;
     this.position.y = newY;
@@ -196,7 +214,26 @@ export class Character {
     }
   }
 
+  //update the characters previous position
+  updatePrevPos(newX, newY, newDir) {
+    this.previousPosition.x = newX;
+    this.previousPosition.y = newY;
+    this.previousPosition.dir = newDir;
+  }
+
+  revertPos() {
+    this.position = { ...this.previousPosition };
+  }
+
   setDirection(dir) {
-    this.dir = dir;
+    this.position.dir = dir;
+  }
+
+  toggleUsed() {
+    this.used = !this.used;
+  }
+
+  toggleWaiting() {
+    this.waiting = !this.waiting;
   }
 }
