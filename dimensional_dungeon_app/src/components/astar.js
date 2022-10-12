@@ -10,7 +10,6 @@ function Astar(
   playerTeam,
   enemyTeam
 ) {
-  console.clear();
   let obstacleGrid = Array(10)
     .fill()
     .map(() => Array(10).fill(0));
@@ -21,7 +20,6 @@ function Astar(
     obstacleGrid[value.position.y / 48][value.position.x / 48] = 1;
   }
   obstacleGrid[startY][startX] = 0;
-  //console.log(obstacleGrid);
 
   let newDest = {
     x: destination.x - (destination.x % 48),
@@ -92,8 +90,6 @@ function Astar(
     }
   }
 
-  //console.log(grid);
-
   for (let i = 0; i < cols; i++) {
     for (let j = 0; j < rows; j++) {
       grid[i][j].addNeighbors(grid);
@@ -103,33 +99,6 @@ function Astar(
   start = grid[startX][startY];
 
   end = grid[destination.x / 48][destination.y / 48];
-
-  // function findEnd(options) {
-  //   //let = [grid[destination.x / 48][destination.y / 48]];
-  //   let tempDist = 999999999;
-  //   let bestEnd = null;
-  //   let lowestDistEnd = 999999999;
-  //   let nextBestEnd = null;
-  //   console.log(heuristic(start, options[0]));
-  //   for (let i = 0; i < options.length; i++) {
-  //     if (heuristic(start, options[i]) < tempDist) {
-  //       if (!options[i].wall) {
-  //         tempDist = heuristic(start, options[i]);
-  //         bestEnd = options[i];
-  //       }
-  //     }
-  //     if (heuristic(start, options[i]) < lowestDistEnd) {
-  //       lowestDistEnd = heuristic(start, options[i]);
-  //       nextBestEnd = options[i];
-  //     }
-  //   }
-  //   if (bestEnd === null) {
-  //     findEnd(nextBestEnd.neighbors);
-  //   } else {
-  //     console.log(bestEnd);
-  //     return bestEnd;
-  //   }
-  // }
 
   openSet.push(start);
 
@@ -145,7 +114,6 @@ function Astar(
         }
       }
       var current = openSet[winner];
-      console.log(current);
 
       if (
         !manhattanDist(
@@ -156,7 +124,6 @@ function Astar(
           moveRange
         )
       ) {
-        console.log("here");
         break;
       }
 
@@ -192,7 +159,6 @@ function Astar(
       //no solution
     }
     if (checkBreak) {
-      console.log("last current: ", current);
       break;
     }
   }
@@ -209,7 +175,6 @@ function Astar(
       moveRange
     )
   ) {
-    console.log("path is created");
     //path.push(temp);
     objectPath = {
       ...objectPath,
@@ -231,8 +196,6 @@ function Astar(
     //   moveRange
     //)
   ) {
-    console.log(temp.previous);
-
     objectPath = {
       ...objectPath,
       [`${temp.previous.i * 48},${temp.previous.j * 48}`]: {
@@ -243,8 +206,7 @@ function Astar(
 
     temp = temp.previous;
   }
-  //console.log(objectPath);
-  console.log(end);
+
   return objectPath;
 }
 

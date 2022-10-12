@@ -8,7 +8,6 @@ export function manhattanDist(sx, sy, ex, ey, range) {
   ey = (ey - (ey % 48)) / 48;
 
   let result = Math.abs(ex - sx) + Math.abs(ey - sy) <= range;
-  console.log(sx, sy, ex, ey, result);
 
   return result;
 }
