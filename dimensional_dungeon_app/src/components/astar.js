@@ -1,6 +1,28 @@
 import { manhattanDist } from "../functions/manhattanDist";
 
-function Astar(rows, cols, startX, startY, moveRange, destination) {
+function Astar(
+  rows,
+  cols,
+  startX,
+  startY,
+  moveRange,
+  destination,
+  playerTeam,
+  enemyTeam
+) {
+  console.clear();
+  let obstacleGrid = Array(10)
+    .fill()
+    .map(() => Array(10).fill(0));
+  for (const [key, value] of Object.entries(playerTeam)) {
+    obstacleGrid[value.position.y / 48][value.position.x / 48] = 1;
+  }
+  for (const [key, value] of Object.entries(enemyTeam)) {
+    obstacleGrid[value.position.y / 48][value.position.x / 48] = 1;
+  }
+  obstacleGrid[startY][startX] = 0;
+  //console.log(obstacleGrid);
+
   let newDest = {
     x: destination.x - (destination.x % 48),
     y: destination.y - (destination.y % 48),
@@ -24,10 +46,10 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
 
   let openSet = [];
   let closedSet = [];
-  let path = [];
   let objectPath = {};
   let start;
   let end;
+  let checkBreak = false;
 
   function Spot(i, j) {
     this.i = i;
@@ -37,6 +59,7 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
     this.h = 0;
     this.neighbors = [];
     this.previous = null;
+    this.wall = false;
 
     this.addNeighbors = function (grid) {
       let i = this.i;
@@ -63,8 +86,13 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
   for (let i = 0; i < cols; i++) {
     for (let j = 0; j < rows; j++) {
       grid[i][j] = new Spot(i, j);
+      if (obstacleGrid[j][i]) {
+        grid[i][j].wall = true;
+      }
     }
   }
+
+  //console.log(grid);
 
   for (let i = 0; i < cols; i++) {
     for (let j = 0; j < rows; j++) {
@@ -76,9 +104,37 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
 
   end = grid[destination.x / 48][destination.y / 48];
 
+  // function findEnd(options) {
+  //   //let = [grid[destination.x / 48][destination.y / 48]];
+  //   let tempDist = 999999999;
+  //   let bestEnd = null;
+  //   let lowestDistEnd = 999999999;
+  //   let nextBestEnd = null;
+  //   console.log(heuristic(start, options[0]));
+  //   for (let i = 0; i < options.length; i++) {
+  //     if (heuristic(start, options[i]) < tempDist) {
+  //       if (!options[i].wall) {
+  //         tempDist = heuristic(start, options[i]);
+  //         bestEnd = options[i];
+  //       }
+  //     }
+  //     if (heuristic(start, options[i]) < lowestDistEnd) {
+  //       lowestDistEnd = heuristic(start, options[i]);
+  //       nextBestEnd = options[i];
+  //     }
+  //   }
+  //   if (bestEnd === null) {
+  //     findEnd(nextBestEnd.neighbors);
+  //   } else {
+  //     console.log(bestEnd);
+  //     return bestEnd;
+  //   }
+  // }
+
   openSet.push(start);
 
   //while we havent reacted our destination
+
   while (current !== end) {
     if (openSet.length > 0) {
       //keep going
@@ -89,6 +145,7 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
         }
       }
       var current = openSet[winner];
+      console.log(current);
 
       if (
         !manhattanDist(
@@ -99,6 +156,7 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
           moveRange
         )
       ) {
+        console.log("here");
         break;
       }
 
@@ -108,8 +166,10 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
       let neighbors = current.neighbors;
       for (let i = 0; i < neighbors.length; i++) {
         var neighbor = neighbors[i];
-
-        if (!closedSet.includes(neighbor)) {
+        if (neighbor === end && neighbor.wall) {
+          checkBreak = true;
+        }
+        if (!closedSet.includes(neighbor) && !neighbor.wall) {
           let tempG = current.g + 1;
 
           if (openSet.includes(neighbor)) {
@@ -127,13 +187,19 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
         }
       }
     } else {
+      console.log("returning {}");
+      return {};
       //no solution
+    }
+    if (checkBreak) {
+      console.log("last current: ", current);
+      break;
     }
   }
 
   //create the path that we will return to main canvas component
-  path = [];
   let temp = current;
+
   if (
     manhattanDist(
       startX * 48,
@@ -143,6 +209,7 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
       moveRange
     )
   ) {
+    console.log("path is created");
     //path.push(temp);
     objectPath = {
       ...objectPath,
@@ -164,7 +231,8 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
     //   moveRange
     //)
   ) {
-    path.push(temp.previous);
+    console.log(temp.previous);
+
     objectPath = {
       ...objectPath,
       [`${temp.previous.i * 48},${temp.previous.j * 48}`]: {
@@ -175,7 +243,8 @@ function Astar(rows, cols, startX, startY, moveRange, destination) {
 
     temp = temp.previous;
   }
-
+  //console.log(objectPath);
+  console.log(end);
   return objectPath;
 }
 

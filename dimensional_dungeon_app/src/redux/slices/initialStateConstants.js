@@ -30,7 +30,7 @@ export const initialRoster = {
       x: 48,
       y: 0,
 
-      maxStats: { dmg: 5, hp: 20, moveRange: 3 },
+      maxStats: { dmg: 7, hp: 20, moveRange: 3 },
     },
     superman: {
       id: "superman",
