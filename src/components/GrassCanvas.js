@@ -15,6 +15,7 @@ import {
   playerTeamToActiveRoster,
 } from "../functions/characterConversions";
 import { saveDataActions } from "../redux/slices/saveData";
+import TeamSidebar from "./TeamSidebar";
 
 const GrassCanvas = (props) => {
   const canvasRef = useRef();
@@ -69,6 +70,7 @@ const GrassCanvas = (props) => {
 
   const [currentChar, setCurrentChar] = useState({});
   const [currentEnemy, setCurrentEnemy] = useState({});
+  const [sideBarChar, setSideBarChar] = useState({});
   const [firstRender, setFirstRender] = useState(true);
   const [charLimit, setCharLimit] = useState(4);
   const [openSet, setOpenSet] = useState({});
@@ -248,6 +250,7 @@ const GrassCanvas = (props) => {
             }
             //if the click is outside the range, deselect the current character
             else {
+              if (currentChar === sideBarChar) setSideBarChar({});
               setCurrentChar({});
               endMovement();
               setOpenSet({});
@@ -258,6 +261,7 @@ const GrassCanvas = (props) => {
             endMovement();
             currentChar.toggleUsed();
             setPlayerTeam({ ...playerTeam });
+            if (currentChar === sideBarChar) setSideBarChar({});
             setCurrentChar({});
             setOpenSet({});
             incrementTurn();
@@ -265,6 +269,7 @@ const GrassCanvas = (props) => {
           } else {
             let key = checkTileForHero(x, y, playerTeam);
             setCurrentChar(playerTeam[key]);
+            setSideBarChar(playerTeam[key]);
             setOpenSet(
               tilesInMoveRange(
                 playerTeam[key].position.x,
@@ -291,6 +296,7 @@ const GrassCanvas = (props) => {
               currentChar.position.dir
             );
             setPlayerTeam({ ...playerTeam });
+            if (currentChar === sideBarChar) setSideBarChar({});
             setCurrentChar({});
             setOpenSet({});
             incrementTurn();
@@ -299,6 +305,7 @@ const GrassCanvas = (props) => {
             currentChar.toggleWaiting();
             setPlayerTeam({ ...playerTeam });
             setDestination({});
+            if (currentChar === sideBarChar) setSideBarChar({});
             setCurrentChar({});
             setOpenSet({});
           }
@@ -319,6 +326,7 @@ const GrassCanvas = (props) => {
             path = null;
             setDestination({});
             setCurrentChar(playerTeam[key]);
+            setSideBarChar(playerTeam[key]);
             setOpenSet(
               tilesInMoveRange(
                 position.x,
@@ -370,6 +378,7 @@ const GrassCanvas = (props) => {
       maxStats
     );
     setCurrentChar(tempCurr);
+    setSideBarChar({ tempCurr });
     delete playerTeam[id];
     let canvasDiv = document.getElementById("canvas-div");
     canvasDiv.style.cursor = 'url("' + tempCurr.icon + '") 25 15, auto';
@@ -397,6 +406,7 @@ const GrassCanvas = (props) => {
     const newTeam = { ...playerTeam, [tempCurr.id]: tempCurr };
     setPlayerTeam(newTeam);
     setCurrentChar({});
+    setSideBarChar({});
 
     let canvasDiv = document.getElementById("canvas-div");
     canvasDiv.style.cursor = "";
@@ -486,6 +496,7 @@ const GrassCanvas = (props) => {
           setTimeout(() => {
             char.updatePos(char.position.x, char.position.y + 1);
             char.setDirection("down");
+            console.log("HERE");
 
             setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
@@ -1075,6 +1086,7 @@ const GrassCanvas = (props) => {
     setFirstRender(false);
     if (!mode.battle.active) {
       setCurrentChar({});
+      setSideBarChar({});
 
       for (const [key] of Object.entries(playerTeam)) {
         const teamSelectIcon = document.getElementById(key);
@@ -1158,7 +1170,18 @@ const GrassCanvas = (props) => {
   }, [mapImage, mode.teamSelection.active, enemyTeam]);
 
   useEffect(() => {
+    let tempCurr;
     if (turnInfo.team === "enemy") {
+      if (Object.keys(currentEnemy.length === 0)) {
+        for (const [key, value] of Object.entries(enemyTeam)) {
+          if (!value.used) {
+            console.log(key);
+            setCurrentEnemy(enemyTeam[key]);
+            break;
+          }
+        }
+      }
+
       let highestDmg = Object.entries(playerTeam)[0][1];
       for (const [key, value] of Object.entries(playerTeam)) {
         if (value.maxStats.dmg > highestDmg.maxStats.dmg) {
@@ -1166,160 +1189,154 @@ const GrassCanvas = (props) => {
         }
       }
 
-      path = astar(
-        10,
-        10,
-        currentEnemy.position.x / 48,
-        currentEnemy.position.y / 48,
-        currentEnemy.currentStats.moveRange,
-        highestDmg.position,
-        playerTeam,
-        enemyTeam
-      );
+      if (Object.entries(currentEnemy).length !== 0) {
+        path = astar(
+          10,
+          10,
+          currentEnemy.position.x / 48,
+          currentEnemy.position.y / 48,
+          currentEnemy.currentStats.moveRange,
+          highestDmg.position,
+          playerTeam,
+          enemyTeam
+        );
 
-      let pathArray = Object.entries(path).reverse();
+        let pathArray = Object.entries(path).reverse();
 
-      if (pathArray.length > 0) {
-        simulateEnemyMovement(pathArray);
-      } else {
-        currentEnemy.toggleUsed();
+        if (pathArray.length > 0) {
+          simulateEnemyMovement(pathArray);
+        } else {
+          currentEnemy.toggleUsed();
 
-        setEnemyTeam({ ...enemyTeam });
-        for (const [key, value] of Object.entries(enemyTeam)) {
-          if (!value.used) {
-            setCurrentEnemy(enemyTeam[key]);
-            return;
+          setEnemyTeam({ ...enemyTeam });
+          for (const [key, value] of Object.entries(enemyTeam)) {
+            if (!value.used) {
+              setCurrentEnemy(enemyTeam[key]);
+              return;
+            }
           }
-        }
 
-        incrementTurn();
-        console.log("no path");
+          incrementTurn();
+          console.log("no path");
+        }
       }
     }
   }, [turnInfo, currentEnemy]);
 
   return (
-    <div className="container-lg">
-      <div className="row justify-content-center reset-redux-states">
-        <div className="col-md-auto">
-          <button
-            className="btn reset-button"
-            onClick={() => {
-              resetRoster();
-              setPlayerTeam({});
-            }}
-          >
-            Reset Roster
-          </button>
-        </div>
-        <div className="col-md-auto">
-          <button className="btn reset-button" onClick={() => resetGame()}>
-            Reset Game
-          </button>
-        </div>
-        <div className="col-md-auto">
-          <button
-            className="btn reset-button"
-            onClick={() => {
-              startGame();
-            }}
-          >
-            Start Game
-          </button>
-        </div>
-        <div className="col-md-auto">
-          <button
-            className="btn reset-active-heroes"
-            onClick={() => {
-              clearSave();
-            }}
-          >
-            Clear Save
-          </button>
-        </div>
-      </div>
-      <div id="full-ui" className="full-ui row justify-content-center">
-        <div id="canvas-div" className="canvas-div col-md-auto">
-          <canvas
-            id="canvas"
-            ref={canvasRef}
-            onClick={(e) => {
-              if (turnInfo.team === "ally" && !moving)
-                handleClick.bind(this)(canvas, e);
-            }}
-            onMouseMove={(e) => {
-              if (mode.movement.active) {
-                drawPath(e);
-              }
-            }}
-          ></canvas>
-
+    <div className="container-lg justify-content-center">
+      <div
+        id="full-ui"
+        className="full-ui row justify-content-center text-center"
+      >
+        <div className="col-md-auto text-center">
           <div className="row">
-            {!mode.battle.active && mode.teamSelection.active ? (
-              <TeamSelection
-                playerTeam={playerTeam}
-                setPlayerTeam={setPlayerTeam}
-                currentChar={currentChar}
-                setCurrentChar={setCurrentChar}
-                charLimit={charLimit}
-                defaultDir={defaultDir}
-              />
-            ) : null}
-            <div>
-              {mode.battle.active && !mode.teamSelection.active ? (
-                <div>
-                  <button onClick={() => console.log(playerTeam)}>
-                    playerTeam
-                  </button>
-                  <button onClick={() => console.log(enemyTeam)}>
-                    enemyTeam
-                  </button>
-                  <button onClick={() => console.log(turnInfo)}>
-                    turnInfo
-                  </button>
-                </div>
-              ) : null}
+            <div className="col-md-auto turn-info">
+              <h3>
+                Turn:{turnInfo.turnNum}{" "}
+                {turnInfo.team.charAt(0).toUpperCase() + turnInfo.team.slice(1)}
+              </h3>
             </div>
           </div>
-        </div>
+          <div className="row  justify-content-center text-center">
+            <div id="canvas-div" className="canvas-div col-md-auto">
+              <canvas
+                id="canvas"
+                className="canvas"
+                ref={canvasRef}
+                onClick={(e) => {
+                  if (turnInfo.team === "ally" && !moving)
+                    handleClick.bind(this)(canvas, e);
+                }}
+                onMouseMove={(e) => {
+                  if (mode.movement.active) {
+                    drawPath(e);
+                  }
+                }}
+              ></canvas>
+            </div>
 
-        <div id="hero-info" className="hero-info col-4">
-          <div className="row">
-            {Object.keys(currentChar).length > 0 ? (
-              <>
-                <div className="row hero-info-row">
-                  <div className="col current-hero-display-icon">
-                    <h5>{currentChar.name}</h5>
+            <TeamSidebar
+              playerTeam={playerTeam}
+              enemyTeam={enemyTeam}
+              currentChar={currentChar}
+              currentEnemy={currentEnemy}
+              collection={collection}
+              sideBarChar={sideBarChar}
+              setSideBarChar={setSideBarChar}
+              turnInfo={turnInfo}
+            />
+
+            <div className="row">
+              {!mode.battle.active && mode.teamSelection.active ? (
+                <TeamSelection
+                  playerTeam={playerTeam}
+                  setPlayerTeam={setPlayerTeam}
+                  currentChar={currentChar}
+                  setCurrentChar={setCurrentChar}
+                  charLimit={charLimit}
+                  defaultDir={defaultDir}
+                  sideBarChar={sideBarChar}
+                  setSideBarChar={setSideBarChar}
+                />
+              ) : null}
+              <div>
+                {mode.battle.active && !mode.teamSelection.active ? (
+                  <div>
+                    <button onClick={() => console.log(playerTeam)}>
+                      playerTeam
+                    </button>
+                    <button onClick={() => console.log(enemyTeam)}>
+                      enemyTeam
+                    </button>
+                    <button onClick={() => console.log(turnInfo)}>
+                      turnInfo
+                    </button>
                   </div>
-                  <div className="col-md-auto current-hero-display-icon">
-                    <img src={currentChar.icon} />
-                  </div>
-                </div>
-                <div className="row hero-info-row">
-                  <div className="row hero-info--sub-row">
-                    <h5>Current Tile (Coordinates)</h5>
-                  </div>
-                  <div className="row hero-info-sub-row">
-                    <div className="col">
-                      x:
-                      {currentChar.position.x !== null
-                        ? currentChar.position.x
-                        : " N/A"}
-                    </div>
-                    <div className="col">
-                      y:
-                      {currentChar.position.y !== null
-                        ? currentChar.position.y
-                        : " N/A"}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="col">
-                <h5>Select a hero</h5>
+                ) : null}
               </div>
-            )}
+            </div>
+            <div className="row justify-content-center reset-redux-states">
+              <div className="col-md-auto">
+                <button
+                  className="btn reset-button"
+                  onClick={() => {
+                    resetRoster();
+                    setPlayerTeam({});
+                  }}
+                >
+                  Reset Roster
+                </button>
+              </div>
+              <div className="col-md-auto">
+                <button
+                  className="btn reset-button"
+                  onClick={() => resetGame()}
+                >
+                  Reset Game
+                </button>
+              </div>
+              <div className="col-md-auto">
+                <button
+                  className="btn reset-button"
+                  onClick={() => {
+                    startGame();
+                  }}
+                >
+                  Start Game
+                </button>
+              </div>
+              <div className="col-md-auto">
+                <button
+                  className="btn reset-active-heroes"
+                  onClick={() => {
+                    clearSave();
+                  }}
+                >
+                  Clear Save
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

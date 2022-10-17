@@ -8,12 +8,12 @@ import { rosterActions } from "../redux/slices/roster";
 const TeamSelection = (props) => {
   const dispatch = useDispatch();
   const roster = useSelector((state) => state.roster);
-  const mode = useSelector((state) => state.mode);
 
   const collection = roster.collection;
   const activeRoster = roster.activeRoster;
-  const selectedHero = mode.selectedHero.hero;
 
+  const sideBarChar = props.sideBarChar;
+  const setSideBarChar = props.setSideBarChar;
   const currentChar = props.currentChar;
   const setCurrentChar = props.setCurrentChar;
   const playerTeam = props.playerTeam;
@@ -62,8 +62,12 @@ const TeamSelection = (props) => {
     ) {
       let tempCurr = convertToChar(char, defaultDir);
       tempCurr.updatePos(null, null);
-
+      if (Object.keys(currentChar).length) {
+        let oldCurr = document.getElementById(currentChar.id);
+        oldCurr.className = "";
+      }
       setCurrentChar(tempCurr);
+      setSideBarChar(tempCurr);
       canvas.style.cursor = 'url("' + char.icon + '") 25 15, auto';
       const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "team-select-icon selected";
@@ -74,6 +78,8 @@ const TeamSelection = (props) => {
       teamSelectIcon.className = "";
       if (currentChar && char.id === currentChar.id) {
         setCurrentChar({});
+        setSideBarChar({});
+        console.log("here");
       }
       canvas.style.cursor = "";
       delete playerTeam[char.id];
