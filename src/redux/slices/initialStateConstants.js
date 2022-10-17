@@ -5,8 +5,9 @@ export const initialRoster = {
   collection: {
     batman: {
       id: "batman",
-      name: "Batman (Prime Earth)",
+      name: "Batman",
       icon: "/images/sprites/batman/batmanDown2.png",
+      displayImg: "/images/sprites/batman/batmanDisplayImg.png",
       spriteSheet: "/images/sprites/batman/batmanSpriteSheet.png",
       x: 48,
       y: 0,
@@ -14,8 +15,9 @@ export const initialRoster = {
     },
     robin: {
       id: "robin",
-      name: "Robin (Dick Grayson)(Prime Earth)",
+      name: "Robin",
       icon: "/images/sprites/robin/robinDown2.png",
+      displayImg: "/images/sprites/robin/robinDisplayImg.png",
       spriteSheet: "/images/sprites/robin/robinSpriteSheet.png",
       x: 48,
       y: 0,
@@ -24,8 +26,9 @@ export const initialRoster = {
     },
     nightwing: {
       id: "nightwing",
-      name: "Nightwing (Dick Grayson)(Prime Earth)",
+      name: "Nightwing",
       icon: "/images/sprites/nightwing/nightwingDown2.png",
+      displayImg: "/images/sprites/nightwing/nightwingDisplayImg.png",
       spriteSheet: "/images/sprites/nightwing/nightwingSpriteSheet.png",
       x: 48,
       y: 0,
@@ -34,8 +37,9 @@ export const initialRoster = {
     },
     superman: {
       id: "superman",
-      name: "Superman (Clark Kent)(Prime Earth)",
+      name: "Superman",
       icon: "/images/sprites/superman/supermanDown2.png",
+      displayImg: "/images/sprites/superman/supermanDisplayImg.png",
       spriteSheet: "/images/sprites/superman/supermanSpriteSheet.png",
       x: 48,
       y: 0,
@@ -44,8 +48,9 @@ export const initialRoster = {
     },
     drMultiverse: {
       id: "drMultiverse",
-      name: "Dr. Multiverse (Maya Chamara)(Earth 8)",
+      name: "Dr. Multiverse",
       icon: "/images/sprites/drMultiverse/drMultiverseDown2.png",
+      displayImg: "/images/sprites/drMultiverse/drMultiverseDisplayImg.png",
       spriteSheet: "/images/sprites/drMultiverse/drMultiverseSpriteSheet.png",
       x: 48,
       y: 0,
@@ -54,8 +59,9 @@ export const initialRoster = {
     },
     penguin: {
       id: "penguin",
-      name: "Penguin (Oswald CobblePot)(Prime Earth)",
+      name: "Penguin",
       icon: "/images/sprites/penguin/penguinDown2.png",
+      displayImg: "/images/sprites/penguin/penguinDisplayImg.png",
       spriteSheet: "/images/sprites/penguin/penguinSpriteSheet.png",
       x: 48,
       y: 0,
@@ -64,8 +70,9 @@ export const initialRoster = {
     },
     twoFace: {
       id: "twoFace",
-      name: "Two-Face (Harvey Dent)(Prime Earth)",
+      name: "Two-Face",
       icon: "/images/sprites/twoFace/twoFaceDown2.png",
+      displayImg: "/images/sprites/twoFace/twoFaceDisplayImg.png",
       spriteSheet: "/images/sprites/twoFace/twoFaceSpriteSheet.png",
       x: 48,
       y: 0,
