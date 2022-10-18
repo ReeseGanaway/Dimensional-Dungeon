@@ -30,7 +30,6 @@ export function convertToChar(hero, defaultDir) {
     false,
     hero.maxStats
   );
-  console.log(newChar);
   return newChar;
 }
 
