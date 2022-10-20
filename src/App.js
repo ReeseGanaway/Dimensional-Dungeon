@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import RosterCreation from "./components/RosterCreation";
 import Interface from "./components/Interface";
 import Canvas2 from "./components/Canvas2";
+import SignUp from "./components/auth/SignUp";
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
       <Fragment>
         <Routes>
           <Route path="/" element={<GrassCanvas />}></Route>
+          <Route path="/sign-up" element={<SignUp />}></Route>
           <Route path="/rostercreator" element={<RosterCreation />}></Route>
           <Route path="/game" element={<GrassCanvas />}></Route>
           <Route path="/game2" element={<Canvas2 />}></Route>
