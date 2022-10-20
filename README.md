@@ -1,4 +1,4 @@
-#Dimensional Dungeon
+# Dimensional Dungeon
 
 Hi everyone! Here is the github repo for the fullstack web game I'm currently working on Dimensional Dungeon. Its a turn-based tactical rpg where players can choose some of their favorite superheroes to fight some ai enemies.
 
