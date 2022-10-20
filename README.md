@@ -12,6 +12,7 @@ Current features
 <li>Character Stats: Each character has its own stats, for example, each character has a "move range" that determines how many squares in the grid they can travers in one turn</li>
 <li>Enemy Ai: Enemies will move towards the ally character with the highest damage on each turn</li>
 <li>Turn System: When every character on a team has been used during a turn, the game will allow the other team to make their moves</li>
+<li>Game Save : When a user leaves the page, it will save the state of the active game so that it can be reloaded when they return</li>
 </ul>
 
 ### Getting Started with Create React App
