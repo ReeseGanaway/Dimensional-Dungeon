@@ -17,7 +17,7 @@ import {
 import { saveDataActions } from "../redux/slices/saveData";
 import TeamSidebar from "./TeamSidebar";
 
-const GrassCanvas = (props) => {
+const GrassCanvas = () => {
   const canvasRef = useRef();
   const canvas = document.getElementById("canvas");
   const mapName = "grassCanvas";
