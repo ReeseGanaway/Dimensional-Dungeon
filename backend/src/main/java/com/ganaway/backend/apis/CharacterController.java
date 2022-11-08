@@ -1,4 +1,4 @@
-package com.ganaway.backend.controllers;
+package com.ganaway.backend.apis;
 
 import com.ganaway.backend.model.Character;
 import com.ganaway.backend.repository.CharacterRepository;
