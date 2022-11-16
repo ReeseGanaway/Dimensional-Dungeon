@@ -39,18 +39,18 @@ const Login = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const { res } = await fetch("http://localhost:8080/api/v1/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: {
-        username: { username },
-        password: { password },
-      },
-    });
-    const json = await res.json;
-    console.log(json);
+    axios
+      .post(
+        `https://mighty-island-30403.herokuapp.com/https://dimensional-dungeon-api.herokuapp.com/api/v1/login?username=${username}&password=${password}`
+      )
+      .then((response) => {
+        // if (response.data.accessToken) {
+        //   localStorage.setItem("user", JSON.stringify(response.data));
+        // }
+        console.log(response);
+
+        //return response.data;
+      });
   };
 
   return (
