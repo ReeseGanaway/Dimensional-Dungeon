@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState } from "react";
 import "./SignUp.css";
 
@@ -89,6 +90,22 @@ const SignUp = () => {
       }
     }
   }
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    axios
+      .post(
+        "https://mighty-island-30403.herokuapp.com/https://dimensional-dungeon-api.herokuapp.com/api/v1/signup",
+        {
+          username: username,
+          password: password,
+          email: email,
+        }
+      )
+      .then((response) => {
+        console.log(response);
+      });
+  };
 
   function usernameOnChange(e) {
     const value = e.target.value;
@@ -218,10 +235,11 @@ const SignUp = () => {
             <button
               type="submit"
               className="btn btn-primary"
-              onClick={() => {
+              onClick={(e) => {
                 console.log(email);
                 console.log(username);
                 console.log(password);
+                onSubmit(e);
               }}
             >
               Sign up

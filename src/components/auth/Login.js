@@ -44,12 +44,7 @@ const Login = () => {
         `https://mighty-island-30403.herokuapp.com/https://dimensional-dungeon-api.herokuapp.com/api/v1/login?username=${username}&password=${password}`
       )
       .then((response) => {
-        // if (response.data.accessToken) {
-        //   localStorage.setItem("user", JSON.stringify(response.data));
-        // }
         console.log(response);
-
-        //return response.data;
       });
   };
 
