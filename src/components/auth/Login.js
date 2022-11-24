@@ -5,8 +5,10 @@ import "./SignUp.css";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState(false);
 
   function passwordOnChange(e) {
+    setLoginError(false);
     const value = e.target.value;
     let passwordError = document.getElementById("password-error");
 
@@ -25,6 +27,7 @@ const Login = () => {
   }
 
   function usernameOnChange(e) {
+    setLoginError(false);
     const value = e.target.value;
     let usernameError = document.getElementById("username-error");
 
@@ -45,6 +48,9 @@ const Login = () => {
       )
       .then((response) => {
         console.log(response);
+      })
+      .catch(function (error) {
+        setLoginError(true);
       });
   };
 
@@ -54,6 +60,15 @@ const Login = () => {
         <div className="col-5">
           <form className="px-4 py-3 needs-validation">
             <h3 className="text-center">Log In!</h3>
+            {loginError ? (
+              <div
+                id="login-error"
+                className="alert alert-danger login-error"
+                role="alert"
+              >
+                Invalid credentials
+              </div>
+            ) : null}
             <div className="mb-3">
               <label
                 htmlFor="exampleDropdownFormUsername1"
