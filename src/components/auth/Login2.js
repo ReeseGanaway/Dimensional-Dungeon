@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./SignUp.css";
 import { useDispatch } from "react-redux";
 import { userActions } from "../../redux/slices/user";
-
-const Login = () => {
-  require("react-dom");
-  window.React2 = require("react");
-  console.log(window.React1 === window.React2);
+import axios from "axios";
+const Login2 = () => {
+  //   require("react-dom");
+  //   window.React2 = require("react");
+  //   console.log(window.React1 === window.React2);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -168,4 +166,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login2;

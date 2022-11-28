@@ -2,6 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import storage from "redux-persist/lib/storage";
 import { roster } from "../slices/roster";
 import { mode } from "../slices/mode";
+import { user } from "../slices/user";
 import {
   persistReducer,
   FLUSH,
@@ -17,6 +18,7 @@ const reducers = combineReducers({
   mode: mode.reducer,
   roster: roster.reducer,
   saveData: saveData.reducer,
+  user: user.reducer,
 });
 
 const rootReducer = (state, action) => {

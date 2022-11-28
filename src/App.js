@@ -6,6 +6,7 @@ import RosterCreation from "./components/RosterCreation";
 import Canvas2 from "./components/Canvas2";
 import SignUp from "./components/auth/SignUp";
 import Login from "./components/auth/Login";
+import Login2 from "./components/auth/Login2";
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
           <Route path="/" element={<GrassCanvas />}></Route>
           <Route path="/signup" element={<SignUp />}></Route>
           <Route path="/login" element={<Login />}></Route>
+          <Route path="/login2" element={<Login />}></Route>
           <Route path="/rostercreator" element={<RosterCreation />}></Route>
           <Route path="/game" element={<GrassCanvas />}></Route>
           <Route path="/game2" element={<Canvas2 />}></Route>
