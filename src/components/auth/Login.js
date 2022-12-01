@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./SignUp.css";
-import { useDispatch } from "react-redux";
-import { userActions } from "../../redux/slices/user";
 
 const Login = () => {
   require("react-dom");
@@ -13,17 +11,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
-  const dispatch = useDispatch;
-
-  const setReduxUser = (user) => {
-    dispatch(userActions.setUser(user));
-  };
-
-  useEffect(() => {
-    if (userInfo) {
-      setReduxUser(userInfo);
-    }
-  }, [userInfo]);
 
   function passwordOnChange(e) {
     setLoginError(false);

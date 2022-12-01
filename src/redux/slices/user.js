@@ -1,4 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 
 const initMode = {
   username: null,
@@ -6,6 +7,7 @@ const initMode = {
   access_token: null,
   refresh_token: null,
 };
+
 export const user = createSlice({
   name: "user",
   initialState: initMode,
