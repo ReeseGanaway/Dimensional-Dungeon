@@ -43,14 +43,14 @@ function displaySelectedEnemies(selectedEnemies) {
         return (
           <div
             key={selectedEnemies[key].id}
-            id={selectedEnemies[key].id + "-ally-sidebar"}
-            className="col text-center sidebar-char ally"
+            id={selectedEnemies[key].id + "-enemy-sidebar"}
+            className="col text-center sidebar-char enemy"
             onClick={() => {}}
           >
-            <div className={"row " + selectedEnemies[key].id + "-ally-id"}>
+            <div className={"row " + selectedEnemies[key].id + "-enemy-id"}>
               <h5>{selectedEnemies[key].name}</h5>
             </div>
-            <div className={selectedEnemies[key].id + "-ally-icon"}>
+            <div className={selectedEnemies[key].id + "-enemy-icon"}>
               <img className="icon" src={selectedEnemies[key].icon} />
             </div>
           </div>
