@@ -11,7 +11,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/batman/batmanSpriteSheet.png",
       x: 48,
       y: 0,
-      maxStats: { dmg: 5, hp: 20, moveRange: 2 },
+      maxStats: { dmg: 5, hp: 20, moveRange: 2, attackRange: 1 },
+      used: false,
     },
     robin: {
       id: "robin",
@@ -21,8 +22,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/robin/robinSpriteSheet.png",
       x: 48,
       y: 0,
-
-      maxStats: { dmg: 5, hp: 20, moveRange: 2 },
+      maxStats: { dmg: 5, hp: 20, moveRange: 2, attackRange: 1 },
+      used: false,
     },
     nightwing: {
       id: "nightwing",
@@ -32,8 +33,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/nightwing/nightwingSpriteSheet.png",
       x: 48,
       y: 0,
-
-      maxStats: { dmg: 7, hp: 20, moveRange: 3 },
+      maxStats: { dmg: 7, hp: 20, moveRange: 3, attackRange: 1 },
+      used: false,
     },
     superman: {
       id: "superman",
@@ -43,8 +44,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/superman/supermanSpriteSheet.png",
       x: 48,
       y: 0,
-
-      maxStats: { dmg: 5, hp: 20, moveRange: 2 },
+      maxStats: { dmg: 5, hp: 20, moveRange: 2, attackRange: 1 },
+      used: false,
     },
     drMultiverse: {
       id: "drMultiverse",
@@ -54,8 +55,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/drMultiverse/drMultiverseSpriteSheet.png",
       x: 48,
       y: 0,
-
-      maxStats: { dmg: 5, hp: 20, moveRange: 2 },
+      maxStats: { dmg: 5, hp: 20, moveRange: 2, attackRange: 1 },
+      used: false,
     },
     penguin: {
       id: "penguin",
@@ -65,8 +66,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/penguin/penguinSpriteSheet.png",
       x: 48,
       y: 0,
-
-      maxStats: { dmg: 5, hp: 20, moveRange: 2 },
+      maxStats: { dmg: 5, hp: 20, moveRange: 2, attackRange: 1 },
+      used: false,
     },
     twoFace: {
       id: "twoFace",
@@ -76,8 +77,8 @@ export const initialRoster = {
       spriteSheet: "/images/sprites/twoFace/twoFaceSpriteSheet.png",
       x: 48,
       y: 0,
-
-      maxStats: { dmg: 5, hp: 20, moveRange: 2 },
+      maxStats: { dmg: 5, hp: 20, moveRange: 2, attackRange: 1 },
+      used: false,
     },
   },
 };

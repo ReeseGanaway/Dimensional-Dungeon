@@ -1,4 +1,4 @@
-import { manhattanDist } from "../functions/manhattanDist";
+import { manhattanDistBool } from "../functions/manhattanDist";
 
 function Astar(
   rows,
@@ -116,7 +116,7 @@ function Astar(
       var current = openSet[winner];
 
       if (
-        !manhattanDist(
+        !manhattanDistBool(
           startX * 48,
           startY * 48,
           current.i * 48,
@@ -167,7 +167,7 @@ function Astar(
   let temp = current;
 
   if (
-    manhattanDist(
+    manhattanDistBool(
       startX * 48,
       startY * 48,
       current.i * 48,
@@ -188,7 +188,7 @@ function Astar(
   while (
     temp.previous
     // &&
-    // manhattanDist(
+    // manhattanDistBool(
     //   startX * 48,
     //   startY * 48,
     //   destination.x,

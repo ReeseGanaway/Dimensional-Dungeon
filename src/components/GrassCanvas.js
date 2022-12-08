@@ -5,10 +5,16 @@ import { modeActions } from "../redux/slices/mode";
 import "./Canvas.css";
 import TeamSelection from "./TeamSelection";
 import astar from "./astar";
-import checkTileForHero from "../functions/checkTileForHero";
+import {
+  checkTileForHero,
+  checkTileForEnemy,
+} from "../functions/checkTileForHero";
 import tilesInMoveRange from "../functions/tilesInMoveRange.js";
 import { debounce } from "lodash";
-import { manhattanDist } from "../functions/manhattanDist";
+import {
+  manhattanDistBool,
+  manhattanDistInt,
+} from "../functions/manhattanDist";
 import { Character } from "../classes/Character";
 import {
   activeRosterToPlayerTeam,
@@ -16,6 +22,9 @@ import {
 } from "../functions/characterConversions";
 import { saveDataActions } from "../redux/slices/saveData";
 import TeamSidebar from "./TeamSidebar";
+import { CharacterFactory } from "../functions/characterFactory";
+import { AttackPanel } from "./CharacterAttacks";
+import Modal from "react-bootstrap/Modal";
 
 const GrassCanvas = () => {
   const canvasRef = useRef();
@@ -68,7 +77,9 @@ const GrassCanvas = () => {
     }
   });
 
+  const [showModal, setShowModal] = useState(false);
   const [currentChar, setCurrentChar] = useState({});
+  const [roundCorner, setRoundCorner] = useState("");
   const [currentEnemy, setCurrentEnemy] = useState({});
   const [sideBarChar, setSideBarChar] = useState({});
   const [firstRender, setFirstRender] = useState(true);
@@ -78,6 +89,11 @@ const GrassCanvas = () => {
   const [turnInfo, setTurnInfo] = useState({
     ...saveData["maps"][mapName]["turnInfo"],
   });
+  const [attack, setAttack] = useState(false);
+  const [attackType, setAttackType] = useState(null);
+
+  const [enemiesInRange, setEnemiesInRange] = useState({});
+  const [selectedEnemies, setSelectedEnemies] = useState({});
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -87,8 +103,15 @@ const GrassCanvas = () => {
     4: { x: 48, y: 48 },
   });
 
+  function exitAttack() {
+    setAttack(false);
+    setAttackType(null);
+  }
+
   const mapImage = new Image();
   mapImage.src = "/images/grassMap.png";
+
+  const characterFactory = new CharacterFactory();
 
   const updateXY = (newPosition) => {
     dispatch(rosterActions.updateXY(newPosition));
@@ -145,7 +168,12 @@ const GrassCanvas = () => {
     turnInfo.turnNum = 0;
     turnInfo.team = startingTeam;
     setTurnInfo({ ...turnInfo });
+    exitAttack();
+    setEnemiesInRange({});
+    setSelectedEnemies({});
+    setSideBarChar({});
     setPlayerTeam({});
+    setRoundCorner("");
     setEnemyTeam(
       activeRosterToPlayerTeam({
         penguin: {
@@ -178,6 +206,7 @@ const GrassCanvas = () => {
     activateBattle();
     turnInfo.turnNum = 1;
     setTurnInfo({ ...turnInfo });
+    setRoundCorner("20px");
   }
 
   //Make sure user meant to leave page
@@ -231,20 +260,45 @@ const GrassCanvas = () => {
       //there is currently a current character/ a character is active
       if (Object.keys(currentChar).length !== 0) {
         //if current character has not been assigned an action
+        if (attackType) {
+          let enemy = checkTileForEnemy(x, y, enemyTeam);
+          let hero = checkTileForHero(x, y, playerTeam);
+          if (enemy) {
+            setSelectedEnemies({
+              ...selectedEnemies,
+              [enemy]: enemyTeam[enemy],
+            });
+          }
+          //character clicked is the current character, end the character's turn
+          else if (hero === currentChar.id) {
+            endCharTurn();
+          }
+          //ally character other than the current character is on this space
+          else if (hero) {
+            setCurrentChar(playerTeam[hero]);
+            setSelectedEnemies({});
+            setEnemiesInRange({});
+            exitAttack();
+          }
+          //no character on the tile clicked, deselect current character
+          else if (hero === null && enemy == null) {
+            endMovement();
+            setSelectedEnemies({});
+            setEnemiesInRange({});
+            currentChar.revertPos();
+            if (currentChar.waiting) currentChar.toggleWaiting();
+            setCurrentChar({});
+            exitAttack();
+            setOpenSet({});
+          }
+          return;
+        }
         if (!currentChar.waiting) {
           //if there is no character on the tile that was clicked
-
           if (!checkTileForHero(x, y, playerTeam)) {
             //and the tile is within character range, move character
             if (
               Object.keys(openSet).includes(`${x - (x % 48)},${y - (y % 48)}`)
-              // manhattanDist(
-              //   currentChar.position.x,
-              //   currentChar.position.y,
-              //   destination.x,
-              //   destination.y,
-              //   currentChar.currentStats.moveRange
-              // )
             ) {
               moveCharacter(x, y);
             }
@@ -254,22 +308,18 @@ const GrassCanvas = () => {
               setCurrentChar({});
               endMovement();
               setOpenSet({});
+              setRoundCorner("20px");
+              exitAttack();
+              setEnemiesInRange({});
             }
           }
           //if the tile that was clicked contains the current character
           else if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
-            endMovement();
-            currentChar.toggleUsed();
-            setPlayerTeam({ ...playerTeam });
-            if (currentChar === sideBarChar) setSideBarChar({});
-            setCurrentChar({});
-            setOpenSet({});
-            incrementTurn();
-            setTurnInfo({ ...turnInfo });
+            endCharTurn();
           } else {
             let key = checkTileForHero(x, y, playerTeam);
             setCurrentChar(playerTeam[key]);
-            setSideBarChar(playerTeam[key]);
+            setSideBarChar({ [key]: playerTeam[key] });
             setOpenSet(
               tilesInMoveRange(
                 playerTeam[key].position.x,
@@ -287,27 +337,24 @@ const GrassCanvas = () => {
         else if (currentChar.waiting) {
           //if tile clicked contains currentChar
           if (checkTileForHero(x, y, playerTeam) === currentChar.id) {
-            currentChar.toggleWaiting();
-
-            currentChar.toggleUsed();
-            currentChar.updatePrevPos(
-              currentChar.position.x,
-              currentChar.position.y,
-              currentChar.position.dir
-            );
-            setPlayerTeam({ ...playerTeam });
-            if (currentChar === sideBarChar) setSideBarChar({});
-            setCurrentChar({});
-            setOpenSet({});
-            incrementTurn();
-          } else if (checkTileForHero(x, y, playerTeam) === null) {
+            endCharTurn();
+          } else if (checkTileForEnemy(x, y, enemyTeam)) {
+            //not needed as of now
+          } else if (
+            checkTileForHero(x, y, playerTeam) === null &&
+            checkTileForEnemy(x, y, enemyTeam) === null
+          ) {
             currentChar.revertPos();
             currentChar.toggleWaiting();
             setPlayerTeam({ ...playerTeam });
             setDestination({});
             if (currentChar === sideBarChar) setSideBarChar({});
             setCurrentChar({});
+            setCurrentEnemy({});
             setOpenSet({});
+            setRoundCorner("20px");
+            exitAttack();
+            setEnemiesInRange({});
           }
         }
       }
@@ -321,12 +368,13 @@ const GrassCanvas = () => {
             x >= position.x &&
             x <= position.x + 47 &&
             y >= position.y &&
-            y <= position.y + 47
+            y <= position.y + 47 &&
+            !value.used
           ) {
             path = null;
             setDestination({});
             setCurrentChar(playerTeam[key]);
-            setSideBarChar(playerTeam[key]);
+            setSideBarChar({ [key]: playerTeam[key] });
             setOpenSet(
               tilesInMoveRange(
                 position.x,
@@ -338,6 +386,7 @@ const GrassCanvas = () => {
                 enemyTeam
               )
             );
+            setRoundCorner("");
 
             //put us in movement mode
             activateMovement();
@@ -347,6 +396,26 @@ const GrassCanvas = () => {
         }
       }
     }
+  }
+
+  //function to end the turn of an ally character
+  function endCharTurn() {
+    endMovement();
+    if (currentChar.waiting) currentChar.toggleWaiting();
+    currentChar.updatePrevPos(
+      currentChar.position.x,
+      currentChar.position.y,
+      currentChar.position.dir
+    );
+    currentChar.toggleUsed();
+    if (currentChar === sideBarChar) setSideBarChar({});
+    setCurrentChar({});
+    setOpenSet({});
+    incrementTurn();
+    exitAttack();
+    setRoundCorner("20px");
+    setSelectedEnemies({});
+    setEnemiesInRange({});
   }
 
   //different functions for handling clicks based on current mode
@@ -389,7 +458,7 @@ const GrassCanvas = () => {
     x = x - (x % 48);
     y = y - (y % 48);
     const { id, name, spriteSheet, icon, position, maxStats } = currentChar;
-    const tempCurr = new Character(
+    const tempCurr = characterFactory.create(
       id,
       name,
       spriteSheet.src,
@@ -496,8 +565,6 @@ const GrassCanvas = () => {
           setTimeout(() => {
             char.updatePos(char.position.x, char.position.y + 1);
             char.setDirection("down");
-            console.log("HERE");
-
             setPlayerTeam({ ...playerTeam });
           }, 10 * tempCountTo48);
 
@@ -542,15 +609,28 @@ const GrassCanvas = () => {
         currentEnemy.position.y,
         currentEnemy.position.dir
       );
-      setEnemyTeam({ ...enemyTeam });
-      for (const [key, value] of Object.entries(enemyTeam)) {
-        if (!value.used) {
-          setCurrentEnemy(enemyTeam[key]);
-          return;
+      if (enemyCheckForTarget()) {
+        setEnemyTeam({ ...enemyTeam });
+        setTimeout(() => {
+          for (const [key, value] of Object.entries(enemyTeam)) {
+            if (!value.used) {
+              setCurrentEnemy(enemyTeam[key]);
+              return;
+            }
+          }
+          setSideBarChar({});
+          incrementTurn();
+        }, currentEnemy.currentStats.dmg * 110);
+      } else {
+        setEnemyTeam({ ...enemyTeam });
+        for (const [key, value] of Object.entries(enemyTeam)) {
+          if (!value.used) {
+            setCurrentEnemy(enemyTeam[key]);
+            return;
+          }
         }
+        incrementTurn();
       }
-
-      incrementTurn();
     } else {
       //character is moving right
       if (pathArray[0][1].x < pathArray[1][1].x) {
@@ -633,7 +713,43 @@ const GrassCanvas = () => {
     }
   }
 
+  function enemyCheckForTarget() {
+    for (const [key, value] of Object.entries(playerTeam)) {
+      if (
+        manhattanDistInt(
+          currentEnemy.position.x,
+          currentEnemy.position.y,
+          value.position.x,
+          value.position.y
+        ) <= currentEnemy.currentStats.attackRange
+      ) {
+        setSideBarChar({
+          [key]: playerTeam[key],
+        });
+        currentEnemy.basic(playerTeam[key]);
+        setTimeout(() => {
+          if (
+            playerTeam[key].currentStats.hp <=
+            0 /*currentEnemy.currentStats.dmg*/
+          )
+            delete playerTeam[key];
+        }, 100 * currentEnemy.currentStats.dmg);
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
   function incrementTurn() {
+    if (
+      Object.keys(enemyTeam).length === 0 ||
+      Object.keys(playerTeam).length === 0
+    ) {
+      console.log("Game Over");
+      setShowModal(true);
+      return;
+    }
     switch (turnInfo.team) {
       case "ally":
         for (const [key, value] of Object.entries(playerTeam)) {
@@ -658,6 +774,7 @@ const GrassCanvas = () => {
           if (turnInfo.team !== startingTeam) turnInfo.turnNum++;
           turnInfo.team = "ally";
           setTurnInfo({ ...turnInfo });
+
           setCurrentEnemy({});
           for (const [key, value] of Object.entries(enemyTeam)) {
             enemyTeam[key].toggleUsed();
@@ -1134,8 +1251,15 @@ const GrassCanvas = () => {
         }
       }
 
+      if (Object.keys(enemiesInRange).length > 0) {
+        for (const [key, value] of Object.entries(enemiesInRange)) {
+          context.fillStyle = "rgba(255,0,0,0.5)";
+          context.fillRect(value.position.x, value.position.y, 48, 48);
+        }
+      }
+
       //if movement mode is active
-      if (mode.movement.active) {
+      if (mode.movement.active && !attack) {
         if (destination.x && destination.y) {
           //get the path the character would take to get to the destination
           path = astar(
@@ -1150,8 +1274,15 @@ const GrassCanvas = () => {
           );
 
           let pathArray = Object.entries(path).reverse();
-
-          drawFullPath(pathArray);
+          if (
+            pathArray[pathArray.length - 1][1].x ==
+              destination.x - (destination.x % 48) &&
+            pathArray[pathArray.length - 1][1].y ==
+              destination.y - (destination.y % 48) &&
+            pathArray.length <= currentChar.currentStats.moveRange + 1
+          ) {
+            drawFullPath(pathArray);
+          }
         }
       }
 
@@ -1170,12 +1301,14 @@ const GrassCanvas = () => {
   }, [mapImage, mode.teamSelection.active, enemyTeam]);
 
   useEffect(() => {
-    let tempCurr;
+    if (Object.keys(playerTeam).length === 0 && !mode.teamSelection.active) {
+      setShowModal(true);
+      return;
+    }
     if (turnInfo.team === "enemy") {
       if (Object.keys(currentEnemy.length === 0)) {
         for (const [key, value] of Object.entries(enemyTeam)) {
           if (!value.used) {
-            console.log(key);
             setCurrentEnemy(enemyTeam[key]);
             break;
           }
@@ -1234,112 +1367,154 @@ const GrassCanvas = () => {
             <div className="col-md-auto turn-info">
               <h3>
                 Turn:{turnInfo.turnNum}{" "}
-                {turnInfo.team.charAt(0).toUpperCase() + turnInfo.team.slice(1)}
+                {turnInfo.team
+                  ? turnInfo.team.charAt(0).toUpperCase() +
+                    turnInfo.team.slice(1)
+                  : startingTeam}
               </h3>
             </div>
           </div>
-          <div className="row  justify-content-center text-center">
-            <div id="canvas-div" className="canvas-div col-md-auto">
-              <canvas
-                id="canvas"
-                className="canvas"
-                ref={canvasRef}
-                onClick={(e) => {
-                  if (turnInfo.team === "ally" && !moving)
-                    handleClick.bind(this)(canvas, e);
-                }}
-                onMouseMove={(e) => {
-                  if (mode.movement.active) {
-                    drawPath(e);
-                  }
-                }}
-              ></canvas>
-            </div>
+          <div className="col-md-auto game-col">
+            <div className="row  justify-content-center text-center">
+              <div id="canvas-div" className="canvas-div col-md-auto">
+                <canvas
+                  id="canvas"
+                  className="canvas"
+                  ref={canvasRef}
+                  onClick={(e) => {
+                    if (turnInfo.team === "ally" && !moving)
+                      handleClick.bind(this)(canvas, e);
+                  }}
+                  onMouseMove={(e) => {
+                    if (mode.movement.active) {
+                      drawPath(e);
+                    }
+                  }}
+                  style={{ borderBottomLeftRadius: roundCorner }}
+                ></canvas>
+              </div>
 
-            <TeamSidebar
-              playerTeam={playerTeam}
-              enemyTeam={enemyTeam}
-              currentChar={currentChar}
-              currentEnemy={currentEnemy}
-              collection={collection}
-              sideBarChar={sideBarChar}
-              setSideBarChar={setSideBarChar}
-              turnInfo={turnInfo}
-            />
+              <TeamSidebar
+                playerTeam={playerTeam}
+                enemyTeam={enemyTeam}
+                currentChar={currentChar}
+                currentEnemy={currentEnemy}
+                collection={collection}
+                sideBarChar={sideBarChar}
+                setSideBarChar={setSideBarChar}
+                turnInfo={turnInfo}
+                roundCorner={roundCorner}
+              />
 
-            <div className="row">
               {!mode.battle.active && mode.teamSelection.active ? (
-                <TeamSelection
-                  playerTeam={playerTeam}
-                  setPlayerTeam={setPlayerTeam}
-                  currentChar={currentChar}
-                  setCurrentChar={setCurrentChar}
-                  charLimit={charLimit}
-                  defaultDir={defaultDir}
-                  sideBarChar={sideBarChar}
-                  setSideBarChar={setSideBarChar}
-                />
+                <div id="canvas-col-bottom" className="row canvas-col-bottom">
+                  <TeamSelection
+                    playerTeam={playerTeam}
+                    setPlayerTeam={setPlayerTeam}
+                    currentChar={currentChar}
+                    setCurrentChar={setCurrentChar}
+                    charLimit={charLimit}
+                    defaultDir={defaultDir}
+                    sideBarChar={sideBarChar}
+                    setSideBarChar={setSideBarChar}
+                  />
+                </div>
               ) : null}
-              <div>
-                {mode.battle.active && !mode.teamSelection.active ? (
-                  <div>
-                    <button onClick={() => console.log(playerTeam)}>
-                      playerTeam
-                    </button>
-                    <button onClick={() => console.log(enemyTeam)}>
-                      enemyTeam
-                    </button>
-                    <button onClick={() => console.log(turnInfo)}>
-                      turnInfo
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+
+              {mode.battle.active && Object.keys(currentChar).length !== 0 ? (
+                <div id="canvas-col-bottom" className="row canvas-col-bottom">
+                  <AttackPanel
+                    currentChar={currentChar}
+                    enemyTeam={enemyTeam}
+                    playerTeam={playerTeam}
+                    attack={attack}
+                    setAttack={setAttack}
+                    attackType={attackType}
+                    setAttackType={setAttackType}
+                    enemiesInRange={enemiesInRange}
+                    setEnemiesInRange={setEnemiesInRange}
+                    endCharTurn={endCharTurn}
+                    selectedEnemies={selectedEnemies}
+                  />
+                </div>
+              ) : null}
             </div>
-            <div className="row justify-content-center reset-redux-states">
-              <div className="col-md-auto">
-                <button
-                  className="btn reset-button"
-                  onClick={() => {
-                    resetRoster();
-                    setPlayerTeam({});
-                  }}
-                >
-                  Reset Roster
+          </div>
+          <div className="row justify-content-center reset-redux-states">
+            {mode.battle.active && !mode.teamSelection.active ? (
+              <div>
+                <button onClick={() => console.log(playerTeam)}>
+                  playerTeam
                 </button>
-              </div>
-              <div className="col-md-auto">
-                <button
-                  className="btn reset-button"
-                  onClick={() => resetGame()}
-                >
-                  Reset Game
+                <button onClick={() => console.log(enemyTeam)}>
+                  enemyTeam
                 </button>
-              </div>
-              <div className="col-md-auto">
-                <button
-                  className="btn reset-button"
-                  onClick={() => {
-                    startGame();
-                  }}
-                >
-                  Start Game
+                <button onClick={() => console.log(selectedEnemies)}>
+                  selectedEnemies
                 </button>
+                <button onClick={() => console.log(turnInfo)}>turnInfo</button>
               </div>
-              <div className="col-md-auto">
-                <button
-                  className="btn reset-active-heroes"
-                  onClick={() => {
-                    clearSave();
-                  }}
-                >
-                  Clear Save
-                </button>
-              </div>
+            ) : null}
+            <div className="col-md-auto">
+              <button
+                className="btn reset-button"
+                onClick={() => {
+                  resetRoster();
+                  setPlayerTeam({});
+                }}
+              >
+                Reset Roster
+              </button>
+            </div>
+            <div className="col-md-auto">
+              <button className="btn reset-button" onClick={() => resetGame()}>
+                Reset Game
+              </button>
+            </div>
+            <div className="col-md-auto">
+              <button
+                className="btn reset-button"
+                onClick={() => {
+                  startGame();
+                }}
+              >
+                Start Game
+              </button>
+            </div>
+            <div className="col-md-auto">
+              <button
+                className="btn reset-active-heroes"
+                onClick={() => {
+                  clearSave();
+                }}
+              >
+                Clear Save
+              </button>
             </div>
           </div>
         </div>
       </div>
+      <Modal show={showModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Game Over</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {Object.keys(enemyTeam).length === 0 ? <h3>Victory!</h3> : null}
+          {Object.keys(playerTeam).length === 0 ? <h3>Defeat!</h3> : null}
+        </Modal.Body>
+        <Modal.Footer>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              resetGame();
+              setShowModal(false);
+            }}
+          >
+            Reset Game!
+          </button>
+          <button className="btn btn-primary">Return to level select</button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
