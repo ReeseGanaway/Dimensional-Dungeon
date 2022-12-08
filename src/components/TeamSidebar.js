@@ -18,7 +18,7 @@ const TeamSidebar = (props) => {
             id={enemyTeam[key].id + "-enemy-sidebar"}
             className="col text-center sidebar-char enemy"
             onClick={() => {
-              setSideBarChar(enemyTeam[key]);
+              setSideBarChar({ [key]: enemyTeam[key] });
             }}
           >
             <div className={"row " + enemyTeam[key].id + "-enemy-id"}>
@@ -42,7 +42,7 @@ const TeamSidebar = (props) => {
             id={playerTeam[key].id + "-ally-sidebar"}
             className="col text-center sidebar-char ally"
             onClick={() => {
-              setSideBarChar(playerTeam[key]);
+              setSideBarChar({ [key]: playerTeam[key] });
             }}
           >
             <div className={"row " + playerTeam[key].id + "-ally-id"}>
