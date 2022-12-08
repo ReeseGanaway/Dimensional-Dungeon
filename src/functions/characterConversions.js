@@ -1,10 +1,12 @@
 import { Character } from "../classes/Character";
+import { CharacterFactory } from "./characterFactory";
 
 //function to make character class objects out of heroes in active roster redux state
 export function activeRosterToPlayerTeam(activeRoster) {
   let newTeam = {};
+  const characterFactory = new CharacterFactory();
   for (const [key, value] of Object.entries(activeRoster)) {
-    const newChar = new Character(
+    const newChar = characterFactory.create(
       value.id,
       value.name,
       value.spriteSheet,
@@ -16,20 +18,20 @@ export function activeRosterToPlayerTeam(activeRoster) {
     );
     newTeam = { ...newTeam, [newChar.id]: newChar };
   }
-
   return newTeam;
 }
 
 export function convertToChar(hero, defaultDir) {
-  let newChar = new Character(
-    hero.id,
-    hero.name,
-    hero.spriteSheet,
-    hero.icon,
-    { x: hero.x, y: hero.y, dir: defaultDir },
-    false,
-    hero.maxStats
-  );
+  const tempHero = {
+    id: hero.id,
+    name: hero.name,
+    spritesheet: hero.spriteSheet,
+    icon: hero.icon,
+    position: { x: hero.x, y: hero.y, dir: defaultDir },
+    used: hero.used,
+    maxStats: hero.maxStats,
+  };
+  let newChar = new Character(tempHero);
   return newChar;
 }
 

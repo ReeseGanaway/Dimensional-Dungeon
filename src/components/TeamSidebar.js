@@ -67,7 +67,10 @@ const TeamSidebar = (props) => {
           {displayAllyTeam()}
         </div>
       </div>
-      <div className="enemy-chars row justify-content-center shadow-lg text-center">
+      <div
+        className="enemy-chars row justify-content-center shadow-lg text-center"
+        style={{ borderBottomRightRadius: props.roundCorner }}
+      >
         <div className="row justify-content-center">
           <h5> Enemy Team </h5>
         </div>
@@ -77,65 +80,85 @@ const TeamSidebar = (props) => {
       </div>
     </div>
   ) : (
-    <div
-      id="char-info"
-      className="sidebar col-md-auto"
-      style={
-        sideBarChar === playerTeam[sideBarChar.id]
-          ? { backgroundColor: "rgb(255, 255, 111)" }
-          : { backgroundColor: "rgb(0, 0, 235" }
-      }
-    >
-      <div className="selected-char col-md-auto justify-content-center text-center">
-        <div className="row justify-content-center">
-          <button
-            className="col-md-auto"
-            onClick={() => {
-              setSideBarChar({});
-            }}
-          >
-            {"<- Teams"}
-          </button>
-        </div>
-        <div className="row justify-content-center">
-          <img
-            className="current-icon"
-            src={collection[sideBarChar.id].displayImg}
-          ></img>
-        </div>
-        <div className="row">
-          <h4>{sideBarChar.name}</h4>
-        </div>
-        <div className="row curr-stats text-center justify-content-center">
-          <h4>Current Stats</h4>
-          <h5 className="row align-items-center">
-            Health :
-            <div className="bar">
-              <div
-                id="red-health"
-                className="red-health"
-                style={{
-                  width:
-                    (sideBarChar.currentStats.hp / sideBarChar.maxStats.hp) *
-                      100 +
-                    "%",
-                  fontSize: "15px",
-                }}
-              >
-                {sideBarChar.currentStats.hp}/{sideBarChar.maxStats.hp}
+    Object.keys(sideBarChar).map((key) => {
+      return (
+        <div key={key} className="col-md-auto">
+          <div className="row">
+            <div
+              id="char-info"
+              className="sidebar col-md-auto"
+              style={
+                sideBarChar[key] === playerTeam[key]
+                  ? {
+                      backgroundColor: "rgb(255, 255, 111)",
+                      borderBottomRightRadius: props.roundCorner,
+                    }
+                  : {
+                      backgroundColor: "rgb(0, 0, 235",
+                      borderBottomRightRadius: props.roundCorner,
+                    }
+              }
+            >
+              <div className="selected-char col-md-auto justify-content-center text-center">
+                <div className="row justify-content-center">
+                  <button
+                    className="col-md-auto"
+                    onClick={() => {
+                      setSideBarChar({});
+                    }}
+                  >
+                    {"<- Teams"}
+                  </button>
+                </div>
+                <div className="row justify-content-center">
+                  <img
+                    className="current-icon"
+                    src={collection[sideBarChar[key].id].displayImg}
+                  ></img>
+                </div>
+                <div className="row">
+                  <h4>{sideBarChar[key].name}</h4>
+                </div>
+                <div className="row curr-stats text-center justify-content-center">
+                  <h4>Current Stats</h4>
+                  <h5 className="row align-items-center">
+                    Health :
+                    <div className="bar">
+                      <div
+                        id="red-health"
+                        className="red-health"
+                        style={{
+                          width:
+                            (sideBarChar[key].currentStats.hp /
+                              sideBarChar[key].maxStats.hp) *
+                              100 +
+                            "%",
+                          fontSize: "15px",
+                        }}
+                      >
+                        {sideBarChar[key].currentStats.hp}/
+                        {sideBarChar[key].maxStats.hp}
+                      </div>
+                    </div>
+                  </h5>
+                  <h5 className="row">
+                    {" "}
+                    Dmg : {sideBarChar[key].currentStats.dmg}
+                  </h5>
+                  <h5 className="row">
+                    X : {sideBarChar[key].position.x} Y:{" "}
+                    {sideBarChar[key].position.y}
+                  </h5>
+                </div>
+                <div className="row">
+                  <button className="btn ">More info</button>
+                </div>
               </div>
             </div>
-          </h5>
-          <h5 className="row"> Dmg : {sideBarChar.currentStats.dmg}</h5>
-          <h5 className="row">
-            X : {sideBarChar.position.x} Y: {sideBarChar.position.x}
-          </h5>
+          </div>
         </div>
-        <div className="row">
-          <button className="btn ">More info</button>
-        </div>
-      </div>
-    </div>
+      );
+    })
   );
 };
 

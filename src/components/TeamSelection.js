@@ -2,6 +2,7 @@ import { current } from "@reduxjs/toolkit";
 import React, { Component, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { convertToChar } from "../functions/characterConversions";
+import { CharacterFactory } from "../functions/characterFactory";
 import { modeActions } from "../redux/slices/mode";
 import { rosterActions } from "../redux/slices/roster";
 
@@ -53,6 +54,7 @@ const TeamSelection = (props) => {
 
   //function adds char to active roster, but removes if the char is already on the active roster
   const addToTeam = (char) => {
+    const characterFactory = new CharacterFactory();
     let canvas = document.getElementById("canvas-div");
     //if char is not currently in active roster
     if (
@@ -60,14 +62,22 @@ const TeamSelection = (props) => {
       currentChar.id !== char.id &&
       Object.keys(playerTeam).length < charLimit
     ) {
-      let tempCurr = convertToChar(char, defaultDir);
+      let tempCurr = characterFactory.create(
+        char.id,
+        char.name,
+        char.spriteSheet,
+        char.icon,
+        { x: char.x, y: char.y, dir: defaultDir },
+        char.used,
+        char.maxStats
+      );
       tempCurr.updatePos(null, null);
       if (Object.keys(currentChar).length) {
         let oldCurr = document.getElementById(currentChar.id);
         oldCurr.className = "";
       }
       setCurrentChar(tempCurr);
-      setSideBarChar(tempCurr);
+      setSideBarChar({ [tempCurr.id]: tempCurr });
       canvas.style.cursor = 'url("' + char.icon + '") 25 15, auto';
       const teamSelectIcon = document.getElementById(char.id);
       teamSelectIcon.className = "team-select-icon selected";

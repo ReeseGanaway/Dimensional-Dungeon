@@ -1,12 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./SignUp.css";
 
 const Login = () => {
+  require("react-dom");
+  window.React2 = require("react");
+  console.log(window.React1 === window.React2);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
 
   function passwordOnChange(e) {
+    setLoginError(false);
     const value = e.target.value;
     let passwordError = document.getElementById("password-error");
 
@@ -25,6 +32,7 @@ const Login = () => {
   }
 
   function usernameOnChange(e) {
+    setLoginError(false);
     const value = e.target.value;
     let usernameError = document.getElementById("username-error");
 
@@ -39,18 +47,30 @@ const Login = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const { res } = await fetch("http://localhost:8080/api/v1/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: {
-        username: { username },
-        password: { password },
-      },
-    });
-    const json = await res.json;
-    console.log(json);
+    axios
+      .post(
+        `https://mighty-island-30403.herokuapp.com/https://dimensional-dungeon-api.herokuapp.com/api/v1/login?username=${username}&password=${password}`
+      )
+      .then((response) => {
+        console.log(response);
+        const data = response.data;
+        const { username, authorities, access_token, refreshToken } = data;
+        const roles = [];
+        for (let i = 0; i < authorities.length; i++) {
+          roles.push(authorities[i].authority);
+        }
+        setUserInfo({
+          username: username,
+          roles: roles,
+          access_token: access_token,
+          refreshToken: refreshToken,
+        });
+
+        console.log(username);
+      });
+    // .catch(function (error) {
+    //   setLoginError(true);
+    // });
   };
 
   return (
@@ -59,6 +79,15 @@ const Login = () => {
         <div className="col-5">
           <form className="px-4 py-3 needs-validation">
             <h3 className="text-center">Log In!</h3>
+            {loginError ? (
+              <div
+                id="login-error"
+                className="alert alert-danger login-error"
+                role="alert"
+              >
+                Invalid credentials
+              </div>
+            ) : null}
             <div className="mb-3">
               <label
                 htmlFor="exampleDropdownFormUsername1"
