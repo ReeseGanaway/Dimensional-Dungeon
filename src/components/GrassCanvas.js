@@ -24,6 +24,7 @@ import { saveDataActions } from "../redux/slices/saveData";
 import TeamSidebar from "./TeamSidebar";
 import { CharacterFactory } from "../functions/characterFactory";
 import { AttackPanel } from "./CharacterAttacks";
+import { AttackModal } from "./AttackModal";
 import Modal from "react-bootstrap/Modal";
 
 const GrassCanvas = () => {
@@ -94,6 +95,7 @@ const GrassCanvas = () => {
 
   const [enemiesInRange, setEnemiesInRange] = useState({});
   const [selectedEnemies, setSelectedEnemies] = useState({});
+  const [showAttackModal, setShowAttackModal] = useState(false);
 
   //state used to limit where players can place heroes during team select
   const [teamSelectTiles, setTeamSelectTiles] = useState({
@@ -1491,6 +1493,24 @@ const GrassCanvas = () => {
                 Clear Save
               </button>
             </div>
+            <div className="col-md-auto">
+              <button
+                className="btn show-attack-modal"
+                onClick={() => {
+                  setShowAttackModal(true);
+                }}
+              >
+                Show AttackModal
+              </button>
+              <button
+                className="btn show-attack-modal"
+                onClick={() => {
+                  console.log(showAttackModal);
+                }}
+              >
+                attackModal state
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1515,6 +1535,13 @@ const GrassCanvas = () => {
           <button className="btn btn-primary">Return to level select</button>
         </Modal.Footer>
       </Modal>
+      <AttackModal
+        showAttackModal={showAttackModal}
+        currentChar={currentChar}
+        currentEnemy={currentEnemy}
+        selectedEnemies={selectedEnemies}
+        setShowAttackModal={setShowAttackModal}
+      />
     </div>
   );
 };
