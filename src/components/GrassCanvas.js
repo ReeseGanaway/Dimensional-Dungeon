@@ -211,6 +211,104 @@ const GrassCanvas = () => {
     setRoundCorner("20px");
   }
 
+  const request = requestAnimationFrame(function draw() {
+    const context = canvasRef.current.getContext("2d");
+
+    if (!mapImage.complete) {
+      console.log("not complete");
+      mapImage.onload = () => {
+        context.clearRect(
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height
+        );
+      };
+    } else {
+      context.clearRect(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
+    }
+    context.drawImage(mapImage, 0, 0);
+    console.log(mapImage.width);
+
+    if (mode.teamSelection.active) {
+      context.fillStyle = "rgba(0,0,255,0.3)";
+      for (const [key, value] of Object.entries(teamSelectTiles)) {
+        context.fillRect(value.x, value.y, 48, 48);
+      }
+    }
+
+    //if a character was selected and there is a set of open tiles,
+    //draw the tiles they can move to
+    if (openSet) {
+      for (const [key, value] of Object.entries(openSet)) {
+        if (
+          checkTileForHero(value.x, value.y, playerTeam) &&
+          checkTileForHero(value.x, value.y, playerTeam) !== currentChar.id
+        ) {
+          context.fillStyle = "rgba(255,0,0,0.5)";
+          context.fillRect(value.x, value.y, 48, 48);
+        } else {
+          context.fillStyle = "rgba(0,0,255,0.3)";
+          context.fillRect(value.x, value.y, 48, 48);
+        }
+      }
+    }
+
+    if (Object.keys(enemiesInRange).length > 0) {
+      for (const [key, value] of Object.entries(enemiesInRange)) {
+        context.fillStyle = "rgba(255,0,0,0.5)";
+        context.fillRect(value.position.x, value.position.y, 48, 48);
+      }
+    }
+
+    //if movement mode is active
+    if (mode.movement.active && !attack) {
+      if (destination.x && destination.y) {
+        //get the path the character would take to get to the destination
+        path = astar(
+          10,
+          10,
+          currentChar.position.x / 48,
+          currentChar.position.y / 48,
+          currentChar.currentStats.moveRange,
+          destination,
+          playerTeam,
+          enemyTeam
+        );
+
+        let pathArray = Object.entries(path).reverse();
+        if (
+          pathArray[pathArray.length - 1][1].x ==
+            destination.x - (destination.x % 48) &&
+          pathArray[pathArray.length - 1][1].y ==
+            destination.y - (destination.y % 48) &&
+          pathArray.length <= currentChar.currentStats.moveRange + 1
+        ) {
+          drawFullPath(pathArray);
+        }
+      }
+    }
+
+    if (Object.keys(playerTeam).length > 0) {
+      for (const [key, value] of Object.entries(playerTeam)) {
+        value.draw();
+      }
+    }
+
+    if (Object.keys(enemyTeam).length > 0) {
+      for (const [key, value] of Object.entries(enemyTeam)) {
+        value.draw();
+      }
+    }
+    //};
+    requestAnimationFrame(draw);
+  });
+
   //Make sure user meant to leave page
   window.onbeforeunload = function () {
     console.log("Would you like to save your game?");
@@ -1216,91 +1314,97 @@ const GrassCanvas = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (firstRender) {
-      return;
-    }
-
-    mapImage.onload = () => {
-      canvas.width = mapImage.width;
-      canvas.height = mapImage.height;
-
-      const context = canvas.getContext("2d");
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(mapImage, 0, 0);
-
-      if (mode.teamSelection.active) {
-        context.fillStyle = "rgba(0,0,255,0.3)";
-        for (const [key, value] of Object.entries(teamSelectTiles)) {
-          context.fillRect(value.x, value.y, 48, 48);
-        }
+  useEffect(
+    () => {
+      if (firstRender) {
+        return;
       }
 
-      //if a character was selected and there is a set of open tiles,
-      //draw the tiles they can move to
-      if (openSet) {
-        for (const [key, value] of Object.entries(openSet)) {
-          if (
-            checkTileForHero(value.x, value.y, playerTeam) &&
-            checkTileForHero(value.x, value.y, playerTeam) !== currentChar.id
-          ) {
-            context.fillStyle = "rgba(255,0,0,0.5)";
-            context.fillRect(value.x, value.y, 48, 48);
-          } else {
-            context.fillStyle = "rgba(0,0,255,0.3)";
-            context.fillRect(value.x, value.y, 48, 48);
-          }
-        }
-      }
+      mapImage.onload = () => {
+        canvas.width = mapImage.width;
+        canvas.height = mapImage.height;
+        console.log("here");
 
-      if (Object.keys(enemiesInRange).length > 0) {
-        for (const [key, value] of Object.entries(enemiesInRange)) {
-          context.fillStyle = "rgba(255,0,0,0.5)";
-          context.fillRect(value.position.x, value.position.y, 48, 48);
-        }
-      }
+        //   const context = canvas.getContext("2d");
+        //   context.clearRect(0, 0, canvas.width, canvas.height);
+        //   context.drawImage(mapImage, 0, 0);
 
-      //if movement mode is active
-      if (mode.movement.active && !attack) {
-        if (destination.x && destination.y) {
-          //get the path the character would take to get to the destination
-          path = astar(
-            10,
-            10,
-            currentChar.position.x / 48,
-            currentChar.position.y / 48,
-            currentChar.currentStats.moveRange,
-            destination,
-            playerTeam,
-            enemyTeam
-          );
+        //   if (mode.teamSelection.active) {
+        //     context.fillStyle = "rgba(0,0,255,0.3)";
+        //     for (const [key, value] of Object.entries(teamSelectTiles)) {
+        //       context.fillRect(value.x, value.y, 48, 48);
+        //     }
+        //   }
 
-          let pathArray = Object.entries(path).reverse();
-          if (
-            pathArray[pathArray.length - 1][1].x ==
-              destination.x - (destination.x % 48) &&
-            pathArray[pathArray.length - 1][1].y ==
-              destination.y - (destination.y % 48) &&
-            pathArray.length <= currentChar.currentStats.moveRange + 1
-          ) {
-            drawFullPath(pathArray);
-          }
-        }
-      }
+        //   //if a character was selected and there is a set of open tiles,
+        //   //draw the tiles they can move to
+        //   if (openSet) {
+        //     for (const [key, value] of Object.entries(openSet)) {
+        //       if (
+        //         checkTileForHero(value.x, value.y, playerTeam) &&
+        //         checkTileForHero(value.x, value.y, playerTeam) !== currentChar.id
+        //       ) {
+        //         context.fillStyle = "rgba(255,0,0,0.5)";
+        //         context.fillRect(value.x, value.y, 48, 48);
+        //       } else {
+        //         context.fillStyle = "rgba(0,0,255,0.3)";
+        //         context.fillRect(value.x, value.y, 48, 48);
+        //       }
+        //     }
+        //   }
 
-      if (Object.keys(playerTeam).length > 0) {
-        for (const [key, value] of Object.entries(playerTeam)) {
-          value.draw();
-        }
-      }
+        //   if (Object.keys(enemiesInRange).length > 0) {
+        //     for (const [key, value] of Object.entries(enemiesInRange)) {
+        //       context.fillStyle = "rgba(255,0,0,0.5)";
+        //       context.fillRect(value.position.x, value.position.y, 48, 48);
+        //     }
+        //   }
 
-      if (Object.keys(enemyTeam).length > 0) {
-        for (const [key, value] of Object.entries(enemyTeam)) {
-          value.draw();
-        }
-      }
-    };
-  }, [mapImage, mode.teamSelection.active, enemyTeam]);
+        //   //if movement mode is active
+        //   if (mode.movement.active && !attack) {
+        //     if (destination.x && destination.y) {
+        //       //get the path the character would take to get to the destination
+        //       path = astar(
+        //         10,
+        //         10,
+        //         currentChar.position.x / 48,
+        //         currentChar.position.y / 48,
+        //         currentChar.currentStats.moveRange,
+        //         destination,
+        //         playerTeam,
+        //         enemyTeam
+        //       );
+
+        //       let pathArray = Object.entries(path).reverse();
+        //       if (
+        //         pathArray[pathArray.length - 1][1].x ==
+        //           destination.x - (destination.x % 48) &&
+        //         pathArray[pathArray.length - 1][1].y ==
+        //           destination.y - (destination.y % 48) &&
+        //         pathArray.length <= currentChar.currentStats.moveRange + 1
+        //       ) {
+        //         drawFullPath(pathArray);
+        //       }
+        //     }
+        //   }
+
+        //   if (Object.keys(playerTeam).length > 0) {
+        //     for (const [key, value] of Object.entries(playerTeam)) {
+        //       value.draw();
+        //     }
+        //   }
+
+        //   if (Object.keys(enemyTeam).length > 0) {
+        //     for (const [key, value] of Object.entries(enemyTeam)) {
+        //       value.draw();
+        //     }
+        //   }
+      };
+    },
+    [
+      /*mapImage, mode.teamSelection.active, enemyTeam*/
+    ]
+  );
 
   useEffect(() => {
     if (Object.keys(playerTeam).length === 0 && !mode.teamSelection.active) {
